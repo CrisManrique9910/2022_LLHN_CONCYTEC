@@ -4,9 +4,9 @@ Eventos con mas de un jet:                         5904
 Eventos con lead jets pt > 30 GeV:                 2441
 Eventos con restricciones de eta:                  1974
 Eventos con delta eta entre lead jets > 4.2:       806
-Eventos con HT mayor de 200 GeV:                   806
-Eventos con masa invariante de jets > 750 GeV      359
-Eventos con delta phi entre lead jets > 2.3        171
-Eventos con deltaphi(MPT, 4Jets) > 0.5             117
+Eventos con HT mayor de 200 GeV:                   53
+Eventos con masa invariante de jets > 750 GeV      48
+Eventos con delta phi entre lead jets > 2.3        27
+Eventos con deltaphi(MPT, 4Jets) > 0.5             19
 
-Eventos sobrevivientes a jet cuts                  1.98 %
+Eventos sobrevivientes a jet cuts                  0.32 %

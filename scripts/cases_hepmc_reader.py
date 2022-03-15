@@ -4,10 +4,10 @@ from pathlib import Path
 
 types = ['VBF','GF']
 cards = [13,14,15]
-tevs = [8]
+tevs = [13]
 
 for type in types[:1]:
-    for card in cards[:1]:
+    for card in cards[:]:
         for tev in tevs[:]:
 
             # Programming Parameters

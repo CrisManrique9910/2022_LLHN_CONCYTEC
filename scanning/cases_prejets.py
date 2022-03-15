@@ -6,22 +6,26 @@ bosons = [22]
 leptons = list(range(11,19))
 heavy_n = [9900016,9900014,9900012]
 vetos = bosons + leptons + heavy_n
-print(vetos)
+#print(vetos)
 
-destiny = "./data/raw/"
-types = ['VBF', 'GF']
-cards = [13,14,15]
-mass = {13:50,14:30,15:10}
-tevs = [13]
+
+n=6
+iter=4
+types=['VBF']
+tevs=[13]
+mass=10
+
+cards = list(range(1,n+1))
 
 for tev in tevs[:]:
-    for type in types[:1]:
+    for type in types[:]:
         for card in cards[:]:
 
+            destiny = f"./{mass}/{tev}/{type}/{iter}/raw/"
             Path(destiny).mkdir(exist_ok=True, parents=True)
 
-            file_in = f"./data/raw/{type}_{card}_{tev}.hepmc"
-            file_out = f'prejets-{type}_{card}_{tev}.txt'
+            file_in = f"./{mass}/{tev}/{type}/{iter}/raw/{type}_iter{iter}_card{card}_{tev}.hepmc"
+            file_out = f'prejets-{type}_iter{iter}_card{card}_{tev}.txt'
 
             df = open(file_in, "r")
             prej = open(destiny + file_out, 'w')

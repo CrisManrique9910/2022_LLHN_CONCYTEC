@@ -2,23 +2,19 @@ import json
 import numpy as np
 from pathlib import Path
 
-mass=10
-n=6
-iter=4
+types = ['VBF','GF']
+cards = [13,14,15]
+tevs = [13]
 
-types=['VBF']
-cards = list(range(1,n+1))
-tevs=[13]
-
-for type in types[:]:
-    for card in cards[:]:
+for type in types[:1]:
+    for card in cards[:1]:
         for tev in tevs[:]:
 
             # Programming Parameters
 
-            file_in = f"./{mass}/{tev}/{type}/{iter}/raw/{type}_iter{iter}_card{card}_{tev}.hepmc"
-            destiny = f"./{mass}/{tev}/{type}/{iter}/clean/"
-            file_out = f'recollection_v4-{type}_iter{iter:03}_card{card}_{tev}.json'
+            file_in = f"./data/raw/{type}_{card}_{tev}.hepmc"
+            destiny = "./data/clean/"
+            file_out = f'recollection_v4-{type}_{card}_{tev}.json'
 
             it = 0
             i = 0
@@ -63,7 +59,8 @@ for type in types[:]:
                     if num > 0: #Selection of relevant particles/vertices in the last event
                         #print(mpx,mpy)
                         selection = set()
-                        data[num - 1] = {'params': params, 'v': dict(), 'a': [], 'n5': holder['n5'], 'MET': None}
+                        data[num - 1] = {'params': params, 'v': dict(), 'a': [], 'n5': holder['n5'],
+                                         'MET': None,'MPx':None, 'MPy':None}
                         for n5_k, n5_v in holder['n5'].items():
                             #print(n5_k , n5_i)
                             selection.add(n5_k)
@@ -71,8 +68,8 @@ for type in types[:]:
                         for photon in holder['a']:
                             # select only the photons that come from a n5 vertex
                             outg_a = photon[-1]
+                            data[num - 1]['a'].append(photon)
                             if outg_a in selection:
-                                data[num-1]['a'].append(photon)
                                 x, y, z = [d_scaler * ix for ix in holder['v'][outg_a][0:3]]
                                 #print(x,y,z)
                                 r = np.sqrt(x**2 + y**2)
@@ -80,12 +77,15 @@ for type in types[:]:
                                     tpx -= photon[0]
                                     tpy -= photon[1]
                                     #print(tpx,tpy)
+                            selection.add(outg_a)
                         for vertex in selection:
                             # select only the vertices that have a neutralino as incoming
                             data[num-1]['v'][vertex] = holder['v'][vertex]
                         # getting the met
                         met = np.sqrt(tpx**2 + tpy**2)
                         data[num-1]['MET'] = met
+                        data[num - 1]['MPx'] = tpx
+                        data[num - 1]['MPy'] = tpy
                     #print(data)
                     holder = {'v':dict(),'a':[],'n5':dict()}
                     i += 1
@@ -130,7 +130,8 @@ for type in types[:]:
 
             # Event selection for the last event
             selection = set()
-            data[num - 1] = {'params': params, 'v': dict(), 'a': [], 'n5': holder['n5'], 'met': None}
+            data[num - 1] = {'params': params, 'v': dict(), 'a': [], 'n5': holder['n5'],
+                             'MET': None,'MPx':None, 'MPy':None}
             for n5_k, n5_v in holder['n5'].items():
                 #print(n5_k , n5_i)
                 selection.add(n5_k)
@@ -153,6 +154,8 @@ for type in types[:]:
             # getting the met
             met = np.sqrt(tpx**2 + tpy**2)
             data[num-1]['MET'] = met
+            data[num - 1]['MPx'] = tpx
+            data[num - 1]['MPy'] = tpy
 
             #print(data[num])
             #print(data.keys())

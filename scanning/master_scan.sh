@@ -3,8 +3,9 @@
 
 mass=10
 n=6
-iter=5
+iter=4
 type='VBF'
+tev='13'
 
 if [ "${type}" == "VBF" ]
 	then
@@ -13,6 +14,6 @@ else
 	/home/cristian/Programs/MG5_aMC_v2_9_2/bin/mg5_aMC mg5_launches_GF.txt
 fi 
 
-bash param_dist_mod.sh "${mass}" "${iter}" "${n}" "${type}"
+bash param_dist_mod.sh "${mass}" "${iter}" "${n}" "${type}" "${tev}"
 
-bash hepmc_dist_mod.sh "${mass}" "${iter}" "${n}" "${type}"
+bash hepmc_dist_mod.sh "${mass}" "${iter}" "${n}" "${type}" "${tev}"

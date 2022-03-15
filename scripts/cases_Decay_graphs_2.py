@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import sys
+from my_funcs import my_arctan
 
 def amax2(m):
     try:
@@ -37,7 +38,7 @@ types = ['VBF','GF']
 names = {'VBF':'Vector Boson Fusion','GF':'Gluon Fusion'}
 cards = [13,14,15]
 mass = {13:50,14:30,15:10}
-tevs = [8]
+tevs = [13]
 
 for tev in tevs[:]:
 
@@ -45,18 +46,18 @@ for tev in tevs[:]:
     juices = {i: {j:'' for j in types} for i in cards}
     #print(juices)
     for type in types[:1]:
-        for card in cards[:1]:
+        for card in cards[:]:
 
             print(f'RUNNING: {type} {card} {tev} ')
 
             ip = 1
-            case = f"./cases/{type}/{card}/{tev}/"
+            case = f"./cases/{tev}/{type}/{card}/"
             #destiny_paper = f"./cases/"
             destiny_paper = f"./paper/"
-            destiny_filters = case + 'images/ATLAS/filters/'
-            destiny_cutflow = case + 'images/ATLAS/cutflow/'
+            destiny_filters = case + 'ATLAS/filters/'
+            destiny_cutflow = case + 'ATLAS/cutflow/'
             df_in = f'data/clean/photon_df-{type}_{card}_{tev}.xlsx'
-            jets_in = f'data/clean/jets-{type}_{card}_{tev}_pj.pickle'
+            jets_in = f'data/clean/jets-{type}_{card}_{tev}.pickle'
             Path(destiny_filters).mkdir(parents=True, exist_ok=True)
             Path(destiny_paper).mkdir(parents=True, exist_ok=True)
 
@@ -64,170 +65,17 @@ for tev in tevs[:]:
 
             df['r'] = (df['r']/1000)/ATLASdet_radius
             df['z'] = np.abs(df['z']/1000)/ATLASdet_semilength
-            '''
-            events = df.shape[0]
-            max_ed = int(np.ceil(amax2(df['r'].to_numpy())))
 
-            if max_ed > 9:
-                limit = max_ed
-            else:
-                limit = 9
-            
-            edges=[-0.1,0.25,0.5,0.75,1,5,limit]
-            labels = list(range(len(edges)-1))
-            df['dr',1]=pd.cut(df['r',1],bins=edges,labels=labels)
-            df['dr',2]=pd.cut(df['r',2],bins=edges,labels=labels)
-
-            prejuice = pd.crosstab(index=df['dr',2],columns=df['dr',1])
-            juice=prejuice.values
-
-            for r in labels:
-                try:
-                    prejuice.loc[r]
-                except KeyError:
-                    juice = np.insert(juice,r,0,axis=0)
-
-            for c in labels:
-                try:
-                    prejuice.loc[:,c]
-                except KeyError:
-                    juice = np.insert(juice,c,0,axis=1)
-
-            #print(juice)
-            vmax = np.max(juice)
-            vmin = 0
-            juice1 = juice.copy().astype('float64')
-            juice1[juice1==0] = vmin
-            premask = np.full_like(juice,True,bool)
-            mask1=premask.copy()
-            mask2=premask.copy()
-            mask3=premask.copy()
-            mask1[:4,:4] = False
-            mask2[:4,4:] = False
-            mask2[4:,:4] = False
-            mask3[4:,4:] = False
-            #print(juice)
-
-            fig, ax = plt.subplots(figsize=(8,8))
-            for mask,colors in [(mask1,'Blues'),(mask2,'Greens'),(mask3,'Reds')]:
-                block = np.ma.array(juice1,mask=mask)
-                #im = ax.imshow(block, cmap=colors,norm=mat.colors.LogNorm(vmin=vmin,vmax=vmax),
-                 #              origin='lower')
-                im = ax.imshow(block, cmap=colors,vmin=vmin, vmax=vmax,origin='lower')
-
-            ticks = np.array(range(len(edges))) - 0.5
-            ticklabels = [f'{item} r' if item > 0 else '0' for item in edges]
-            ax.set_xticks(ticks)
-            ax.set_xticklabels(ticklabels)
-            ax.set_yticks(ticks)
-            ax.set_yticklabels(ticklabels)
-            ax.grid(which='major', color='w', linestyle='-', linewidth=3)
-            for i in range(juice.shape[1]):
-                for j in range(juice.shape[0]):
-                    number = juice[j,i]
-                    if number <= (vmax + vmin)/2:
-                    #if np.log(number) <= (np.log(vmax) + np.log(vmin)) / 2:
-                        c = 'k'
-                    else:
-                        c = 'w'
-                    ax.text(i,j,f'{number}',horizontalalignment="center",
-                            verticalalignment="center",color=c)
-            plt.xlabel('Photon 1')
-            plt.ylabel('Photon 2')
-            plt.title(f'Filtro {ip}a: Dentro del radio\n{events} eventos')
-            plt.savefig(destiny_filters+f'filter{ip}a_2D.png')
-            #plt.show()
-            plt.close()
-            '''
-
-            ################ Filter 1b ####################
-
-            df = df.loc[(df.r[1]<1) & (df.r[2]<1)]
-            events = df.shape[0]
-            max_ed = int(np.ceil(amax2(df['z'].to_numpy())))
-            '''
-            if max_ed > 20:
-                limit = max_ed
-            else:
-                limit = 20
-
-            edges=[-0.1,0.25,0.5,0.75,1,5,10,limit]
-            labels = list(range(len(edges)-1))
-            df['dz',1]=pd.cut(df['z',1],bins=edges,labels=labels)
-            df['dz',2]=pd.cut(df['z',2],bins=edges,labels=labels)
-
-            prejuice = pd.crosstab(index=df['dz',2],columns=df['dz',1])
-            juice=prejuice.values
-            
-            for r in labels:
-                try:
-                    prejuice.loc[r]
-                except KeyError:
-                    juice = np.insert(juice,r,0,axis=0)
-
-            for c in labels:
-                try:
-                    prejuice.loc[:,c]
-                except KeyError:
-                    juice = np.insert(juice,c,0,axis=1)
-
-            #print(juice)
-            vmax = np.max(juice)
-            vmin = 0
-            juice1 = juice.copy().astype('float64')
-            juice1[juice1==0] = vmin
-            premask = np.full_like(juice,True,bool)
-            mask1=premask.copy()
-            mask2=premask.copy()
-            mask3=premask.copy()
-            mask1[:4,:4] = False
-            mask2[:4,4:] = False
-            mask2[4:,:4] = False
-            mask3[4:,4:] = False
-            #print(juice)
-
-            fig, ax = plt.subplots(figsize=(8,8))
-            for mask,colors in [(mask1,'Blues'),(mask2,'Greens'),(mask3,'Reds')]:
-                block = np.ma.array(juice1,mask=mask)
-                #im = ax.imshow(block, cmap=colors,norm=mat.colors.LogNorm(vmin=vmin,vmax=vmax),
-                 #              origin='lower')
-                im = ax.imshow(block, cmap=colors,vmin=vmin, vmax=vmax,origin='lower')
-
-            ticks = np.array(range(len(edges))) - 0.5
-            ticklabels = [f'{item} z' if item > 0 else '0' for item in edges]
-            ax.set_xticks(ticks)
-            ax.set_xticklabels(ticklabels)
-            ax.set_yticks(ticks)
-            ax.set_yticklabels(ticklabels)
-            ax.grid(which='major', color='w', linestyle='-', linewidth=3)
-            for i in range(juice.shape[1]):
-                for j in range(juice.shape[0]):
-                    number = juice[j,i]
-                    if number <= (vmax + vmin)/2:
-                    #if np.log(number) <= (np.log(vmax) + np.log(vmin)) / 2:
-                        c = 'k'
-                    else:
-                        c = 'w'
-                    ax.text(i,j,f'{number}',horizontalalignment="center",
-                            verticalalignment="center",color=c)
-            plt.xlabel('Photon 1')
-            plt.ylabel('Photon 2')
-            plt.title(f'Filtro {ip}b: Dentro de la longitud z\n{events} eventos')
-            plt.savefig(destiny_filters+f'filter{ip}b_2D.png')
-            #plt.show()
-            plt.close()
-            '''
-            ip += 1
             ################ Jet Filters ####################
             ################ 1
             #############hmore than one jet
             df_jets = pd.read_pickle(jets_in)
-            df = df.loc[(df.z[1]<1) & (df.z[2]<1)]
+
             events = df.shape[0]
-            inicial=events
-            print(f'Eventos dentro del detector:'.ljust(50),events)
-            df_jets=df_jets.loc[df.index]
+            print(f'Eventos totales:'.ljust(50),events)
             jet_nums = df_jets.groupby(['Event']).size()
+            jet_nums = jet_nums.reindex(df.index,fill_value=0)
+            #sys.exit()
             plus2 = jet_nums[jet_nums>1].index
             #lead2 = df_jets.query('id in [0,1]')
             #lead2 = lead2.reset_index().pivot(index='Event', columns='id')
@@ -430,7 +278,7 @@ for tev in tevs[:]:
             df_jets = df_jets.loc[deta_jet]
             events = deta_jet.size
             print(f'Eventos con delta eta entre lead jets > 4.2:'.ljust(50), events)
-            pts = df_jets.query('pt > 30').groupby(['Event']).sum()
+            pts = df_jets.query('pt > 20').groupby(['Event']).sum().pt
             ht = pts[pts > 200].index
             # print(ht.size)
             ip += 1
@@ -448,11 +296,13 @@ for tev in tevs[:]:
             inv_m = inv_m[inv_m > 750].index
             ip += 1
 
+            '''
             #######################################
             #######
             ############# |D phi| >2.3
             df_jets2 = df_jets2.loc[inv_m]
             df_jets = df_jets.loc[inv_m]
+            df = df.loc[inv_m]
             events = inv_m.size
             print(f'Eventos con masa invariante de jets > 750 GeV'.ljust(50), events)
             dphi_jet = df_jets2[abs(df_jets2.phi[0] - df_jets2.phi[1]) > 2.3].index
@@ -460,26 +310,204 @@ for tev in tevs[:]:
 
             #######################################
             #######
-            ############# |min(D (MTP,4J))| > 0.5
+            ############# |min(Dphi (MTP,4J))| > 0.5
             df_jets = df_jets.loc[dphi_jet].query('id < 4')
             df = df.loc[dphi_jet]
             events = dphi_jet.size
             print(f'Eventos con delta phi entre lead jets > 2.3'.ljust(50), events)
-            delta_phi = abs(df_jets.phi - np.arctan2(df['MPy'][1],df['MPx'][1]))
+            delta_phi = abs(df_jets.phi - my_arctan(df['MPy'][1],df['MPx'][1]))
             delta_phi = delta_phi.groupby('Event').min()
             dphi=delta_phi[delta_phi > 0.5].index
             #print(dphi)
             ip+=1
+            '''
+
+            ########### CONTAINED ################
+            #df = df.loc[dphi]
+            #events = dphi.size
+            df = df.loc[inv_m]
+            events = inv_m.size
+            print(f'Eventos con masa invariante de jets > 750 GeV'.ljust(50), events)
+            inicial = events
+            '''
+            events = df.shape[0]
+            max_ed = int(np.ceil(amax2(df['r'].to_numpy())))
+
+            if max_ed > 9:
+                limit = max_ed
+            else:
+                limit = 9
+
+            edges=[-0.1,0.25,0.5,0.75,1,5,limit]
+            labels = list(range(len(edges)-1))
+            df['dr',1]=pd.cut(df['r',1],bins=edges,labels=labels)
+            df['dr',2]=pd.cut(df['r',2],bins=edges,labels=labels)
+
+            prejuice = pd.crosstab(index=df['dr',2],columns=df['dr',1])
+            juice=prejuice.values
+
+            for r in labels:
+                try:
+                    prejuice.loc[r]
+                except KeyError:
+                    juice = np.insert(juice,r,0,axis=0)
+
+            for c in labels:
+                try:
+                    prejuice.loc[:,c]
+                except KeyError:
+                    juice = np.insert(juice,c,0,axis=1)
+
+            #print(juice)
+            vmax = np.max(juice)
+            vmin = 0
+            juice1 = juice.copy().astype('float64')
+            juice1[juice1==0] = vmin
+            premask = np.full_like(juice,True,bool)
+            mask1=premask.copy()
+            mask2=premask.copy()
+            mask3=premask.copy()
+            mask1[:4,:4] = False
+            mask2[:4,4:] = False
+            mask2[4:,:4] = False
+            mask3[4:,4:] = False
+            #print(juice)
+
+            fig, ax = plt.subplots(figsize=(8,8))
+            for mask,colors in [(mask1,'Blues'),(mask2,'Greens'),(mask3,'Reds')]:
+                block = np.ma.array(juice1,mask=mask)
+                #im = ax.imshow(block, cmap=colors,norm=mat.colors.LogNorm(vmin=vmin,vmax=vmax),
+                 #              origin='lower')
+                im = ax.imshow(block, cmap=colors,vmin=vmin, vmax=vmax,origin='lower')
+
+            ticks = np.array(range(len(edges))) - 0.5
+            ticklabels = [f'{item} r' if item > 0 else '0' for item in edges]
+            ax.set_xticks(ticks)
+            ax.set_xticklabels(ticklabels)
+            ax.set_yticks(ticks)
+            ax.set_yticklabels(ticklabels)
+            ax.grid(which='major', color='w', linestyle='-', linewidth=3)
+            for i in range(juice.shape[1]):
+                for j in range(juice.shape[0]):
+                    number = juice[j,i]
+                    if number <= (vmax + vmin)/2:
+                    #if np.log(number) <= (np.log(vmax) + np.log(vmin)) / 2:
+                        c = 'k'
+                    else:
+                        c = 'w'
+                    ax.text(i,j,f'{number}',horizontalalignment="center",
+                            verticalalignment="center",color=c)
+            plt.xlabel('Photon 1')
+            plt.ylabel('Photon 2')
+            plt.title(f'Filtro {ip}a: Dentro del radio\n{events} eventos')
+            plt.savefig(destiny_filters+f'filter{ip}a_2D.png')
+            #plt.show()
+            plt.close()
+            '''
+
+            ################ Filter 1b ####################
+            df_1ph = df.copy()
+            df = df.loc[(df.r[1] < 1) & (df.r[2] < 1)]
+            events = df.shape[0]
+            max_ed = int(np.ceil(amax2(df['z'].to_numpy())))
+
+            '''
+            if max_ed > 20:
+                limit = max_ed
+            else:
+                limit = 20
+
+            edges=[-0.1,0.25,0.5,0.75,1,5,10,limit]
+            labels = list(range(len(edges)-1))
+            df['dz',1]=pd.cut(df['z',1],bins=edges,labels=labels)
+            df['dz',2]=pd.cut(df['z',2],bins=edges,labels=labels)
+
+            prejuice = pd.crosstab(index=df['dz',2],columns=df['dz',1])
+            juice=prejuice.values
+
+            for r in labels:
+                try:
+                    prejuice.loc[r]
+                except KeyError:
+                    juice = np.insert(juice,r,0,axis=0)
+
+            for c in labels:
+                try:
+                    prejuice.loc[:,c]
+                except KeyError:
+                    juice = np.insert(juice,c,0,axis=1)
+
+            #print(juice)
+            vmax = np.max(juice)
+            vmin = 0
+            juice1 = juice.copy().astype('float64')
+            juice1[juice1==0] = vmin
+            premask = np.full_like(juice,True,bool)
+            mask1=premask.copy()
+            mask2=premask.copy()
+            mask3=premask.copy()
+            mask1[:4,:4] = False
+            mask2[:4,4:] = False
+            mask2[4:,:4] = False
+            mask3[4:,4:] = False
+            #print(juice)
+
+            fig, ax = plt.subplots(figsize=(8,8))
+            for mask,colors in [(mask1,'Blues'),(mask2,'Greens'),(mask3,'Reds')]:
+                block = np.ma.array(juice1,mask=mask)
+                #im = ax.imshow(block, cmap=colors,norm=mat.colors.LogNorm(vmin=vmin,vmax=vmax),
+                 #              origin='lower')
+                im = ax.imshow(block, cmap=colors,vmin=vmin, vmax=vmax,origin='lower')
+
+            ticks = np.array(range(len(edges))) - 0.5
+            ticklabels = [f'{item} z' if item > 0 else '0' for item in edges]
+            ax.set_xticks(ticks)
+            ax.set_xticklabels(ticklabels)
+            ax.set_yticks(ticks)
+            ax.set_yticklabels(ticklabels)
+            ax.grid(which='major', color='w', linestyle='-', linewidth=3)
+            for i in range(juice.shape[1]):
+                for j in range(juice.shape[0]):
+                    number = juice[j,i]
+                    if number <= (vmax + vmin)/2:
+                    #if np.log(number) <= (np.log(vmax) + np.log(vmin)) / 2:
+                        c = 'k'
+                    else:
+                        c = 'w'
+                    ax.text(i,j,f'{number}',horizontalalignment="center",
+                            verticalalignment="center",color=c)
+            plt.xlabel('Photon 1')
+            plt.ylabel('Photon 2')
+            plt.title(f'Filtro {ip}b: Dentro de la longitud z\n{events} eventos')
+            plt.savefig(destiny_filters+f'filter{ip}b_2D.png')
+            #plt.show()
+            plt.close()
+            '''
+
 
             ###############Filter N ################
-            df = df.loc[dphi]
-            events=dphi.size
-            final=events
-            print(f'Eventos con deltaphi(MPT, 4Jets) > 0.5'.ljust(50),events)
-            max_ed = np.ceil(amax2(df['ET'].to_numpy()))
+            df = df.loc[(df.z[1]<1) & (df.z[2]<1)]
+            events=df.shape[0]
+            final_2ph=events
+            print(f'Eventos contenidos dentro del detector'.ljust(50),events)
+            #print(f'Eventos con deltaphi(MPT, 4Jets) > 0.5'.ljust(50),events)
+            
+            df_1ph = df_1ph[((df_1ph.z[1]<1) & (df_1ph.r[1]<1))|((df_1ph.z[2]<1) & (df_1ph.r[2]<1))]
+            final_1ph = df_1ph.shape[0]
 
-            print(f'\nEventos sobrevivientes a jet cuts'.ljust(50), f' {100 * final / inicial:.2f} %')
-            sys.exit()
+            prctg2=100 * final_2ph / inicial
+            prctg1=100 * final_1ph / inicial
+            print(f'\nPrctg de eventos que pasan el VBF contenidos'.ljust(50), f' {prctg2:.2f} %')
+            file = open(f"{destiny_filters}filter{ip}.txt","w")
+            file.write(f"Eventos que pasan el VBF trigger:  {inicial: 6}\n")
+            file.write(f"Eventos con un foton contenido:    {final_1ph: 6}\t{prctg1:.2f}%\n")
+            file.write(f"Eventos con dos fotones contenido: {final_2ph: 6}\t{prctg2:.2f}%\n")
+            file.close()
+
+
+            ip += 1
+            '''
+            max_ed = np.ceil(amax2(df['ET'].to_numpy()))
             if max_ed > 450.0:
                 limit = max_ed
             else:
@@ -536,7 +564,8 @@ for tev in tevs[:]:
             #print(big_mask)
 
             maxet = np.maximum(maxet,vmax)
-            '''
+            
+            
             fig, ax = plt.subplots(figsize=(8,8))
             for mask,colors in [(mask1,'Reds'),(mask2,'Greens'),(mask3,'Blues')]:
                 block = np.ma.array(juice1,mask=mask)

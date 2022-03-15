@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 import pandas as pd
-
+from my_funcs import my_arctan
 
 CMSdet_radius = 1.29 # meters
 CMSdet_semilength = 2.935
@@ -99,16 +99,21 @@ def pipeline(detec_radius, detec_semilength, detec_name):
             photons.append([r,z])
             info['r'] = r
             info['z'] = z
+            info['px'] = px
+            info['py'] = py
             info['pt'] = pt
             info['pz'] = pz
             info['ET'] = Et
+            info['MET'] = holder['MET']
+            info['MPy'] = holder['MPy']
+            info['MPx'] = holder['MPx']
 
             if r >= (r_detec) or abs(z) >= (z_detec):
                  pairs.append(None)
                  info['z_origin'] = np.nan
                  info['rel_tof'] = np.nan
                  info['eta'] = np.nan
-                 info['MET'] = np.nan
+                 #info['MET'] = np.nan
                  dicts.append(info)
                  continue
 
@@ -166,21 +171,32 @@ def pipeline(detec_radius, detec_semilength, detec_name):
                 zf = z + vz * tr
                 t_ph = tr * (10 ** 9)
 
+                x_final = x + vx * tr
+                y_final = y + vy * tr
+
             elif tz < tr:
                 rf = np.sqrt((y + vy * tz) ** 2 + (x + vx * tz) ** 2)
                 zf = np.sign(vz) * z_detec
                 t_ph = tz * (10 ** 9)
+
+                x_final = x + vx * tz
+                y_final = y + vy * tz
 
             else:
                 rf = r_detec
                 zf = np.sign(vz) * z_detec
                 t_ph = tz * (10 ** 9)
 
+                x_final = x + vx * tz
+                y_final = y + vy * tz
+
             tof = t_ph + t_n
 
             prompt_tof = (10**9)*np.sqrt(rf**2+zf**2)/(c_speed*1000)
             rel_tof = tof - prompt_tof
             # (Pseudo)rapidity
+
+            phi = my_arctan(y_final, x_final)
 
             theta = np.arctan2(rf, zf)
             nu = -np.log(np.tan(theta / 2))
@@ -204,9 +220,8 @@ def pipeline(detec_radius, detec_semilength, detec_name):
             info['z_origin']=c_z[-1]
             info['rel_tof']=rel_tof
             info['eta']=nu
-            info['MET'] = holder['MET']
-            info['MPy'] = holder['MPy']
-            info['MPx'] = holder['MPx']
+            info['phi']=phi
+
             pairs.append(info)
             dicts.append(info)
 
@@ -294,17 +309,17 @@ def pipeline(detec_radius, detec_semilength, detec_name):
 
 types = ['VBF','GF']
 cards = [13,14,15]
-tevs = [8]
+tevs = [13]
 
 for type in types[:1]:
-    for card in cards[:1]:
+    for card in cards[:]:
         for tev in tevs[:]:
-            case = f"./cases/{type}/{card}/{tev}/"
+            case = f"./cases/{tev}/{type}/{card}/"
 
             file_in = f'./data/clean/recollection_v4-{type}_{card}_{tev}.json'
 
             destiny_info = './data/clean/'
-            destiny_ims0 = case + 'images/'
+            destiny_ims0 = case
 
             with open(file_in, 'r') as file:
                 data = json.load(file)

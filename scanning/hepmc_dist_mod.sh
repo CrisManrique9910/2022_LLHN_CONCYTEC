@@ -5,8 +5,9 @@ mass=$1
 iter=$2
 n=$3
 tipo=$4
+tev=$5
 
-folder_destiny="/home/cristian/Desktop/HEP_Jones/scanning/${mass}/${tipo}/${iter}/raw"
+folder_destiny="/home/cristian/Desktop/HEP_Jones/scanning/${mass}/${tev}/${tipo}/${iter}/raw"
 
 #declare -a arr
 folder_origin="/home/cristian/Programs/MG5_aMC_v2_9_2/HN_${tipo}_scan/Events"

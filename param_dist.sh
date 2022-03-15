@@ -5,7 +5,7 @@
 folder_origin='/home/cristian/Desktop/HEP_Jones/param_c'
 config_path='/home/cristian/Programs/MG5_aMC_v2_9_2/HN_run_config.txt'
 
-tevs="8"
+tevs="13"
 
 small="  1e-12 = small_width_treatment"
 
@@ -15,7 +15,9 @@ pt_lim=" 10.0  = pta       ! minimum pt for the photons "
 eta_lim=" 2.37  = etaa    ! max rap for the photons "
 ptj1_lim=" 30.0   = ptj1min ! minimum pt for the leading jet in pt"
 ptj2_lim=" 30.0   = ptj2min ! minimum pt for the second jet in pt"
-ht_lim=" 150.0   = htjmin ! minimum jet HT=Sum(jet pt)"
+ht_lim=" 195.0   = htjmin ! minimum jet HT=Sum(jet pt)"
+mi_lim=" 745.0   = mmjj    ! min invariant mass of a jet pair "
+deta_lim=" 4.0   = deltaeta ! minimum rapidity for two jets in the WBF case"
 
 ###############################
 ## Primero GF
@@ -72,9 +74,11 @@ sed -i "59s/.*/${ct}/" "${run_path}"
 sed -i "94s/.*/${decay}/" "${run_path}"
 sed -i "101s/.*/${pt_lim}/" "${run_path}"
 sed -i "115s/.*/${eta_lim}/" "${run_path}"
+sed -i "132s/.*/${mi_lim}/" "${run_path}"
 sed -i "156s/.*/${ptj1_lim}/" "${run_path}"
 sed -i "157s/.*/${ptj2_lim}/" "${run_path}"
 sed -i "164s/.*/${ht_lim}/" "${run_path}"
+sed -i "182s/.*/${deta_lim}/" "${run_path}"
 
 for tev in $tevs
 	do

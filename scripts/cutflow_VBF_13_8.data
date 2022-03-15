@@ -1,12 +1,12 @@
 RUNNING: VBF 13 8 
 Eventos dentro del detector:                       4874
-Eventos con mas de un jet:                         4874
-Eventos con lead jets pt > 30 GeV:                 2197
-Eventos con restricciones de eta:                  1744
-Eventos con delta eta entre lead jets > 4.2:       711
-Eventos con HT mayor de 200 GeV:                   711
-Eventos con masa invariante de jets > 750 GeV      324
-Eventos con delta phi entre lead jets > 2.3        138
-Eventos con deltaphi(MPT, 4Jets) > 0.5             98
+Eventos con mas de un jet:                         4506
+Eventos con lead jets pt > 30 GeV:                 3802
+Eventos con restricciones de eta:                  3093
+Eventos con delta eta entre lead jets > 4.2:       1154
+Eventos con HT mayor de 200 GeV:                   162
+Eventos con masa invariante de jets > 750 GeV      148
+Eventos con delta phi entre lead jets > 2.3        93
+Eventos con deltaphi(MPT, 4Jets) > 0.5             66
 
-Eventos sobrevivientes a jet cuts                  2.01 %
+Eventos sobrevivientes a jet cuts                  1.35 %
