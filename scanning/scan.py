@@ -88,41 +88,41 @@ for mass in masses[:]:
                     input(f"If you already have the .hepmc's for this iteration, press Enter")
                         
                     ###################### Compliamos los jets
-                    os.system('sed -i "12s/.*/'f'n={n}''/" "cases_prejets.py"')
-                    os.system('sed -i "13s/.*/'f'iter={i}''/" "cases_prejets.py"')
-                    os.system('sed -i "14s/.*/'f'types=[\x27{type}\x27]''/" "cases_prejets.py"')
-                    os.system('sed -i "15s/.*/'f'tevs=[{tev}]''/" "cases_prejets.py"')
+                    os.system('sed -i "12s/.*/'f'n={n}''/" "01_cases_prejets.py"')
+                    os.system('sed -i "13s/.*/'f'iter={i}''/" "01_cases_prejets.py"')
+                    os.system('sed -i "14s/.*/'f'types=[\x27{type}\x27]''/" "01_cases_prejets.py"')
+                    os.system('sed -i "15s/.*/'f'tevs=[{tev}]''/" "01_cases_prejets.py"')
                     os.system('sed -i "16s/.*/'f'mass={mass}''/" "cases_pre'
                               'jets.py"')
 
-                    os.system('python cases_prejets.py')
+                    os.system('python 01_cases_prejets.py')
 
-                    os.system('sed -i "12s/.*/'f'n={n}''/" "cases_jets.py"')
-                    os.system('sed -i "13s/.*/'f'iter={i}''/" "cases_jets.py"')
-                    os.system('sed -i "14s/.*/'f'types=[\x27{type}\x27]''/" "cases_jets.py"')
-                    os.system('sed -i "15s/.*/'f'tevs=[{tev}]''/" "cases_jets.py"')
-                    os.system('sed -i "16s/.*/'f'mass={mass}''/" "cases_jets.py"')
+                    os.system('sed -i "12s/.*/'f'n={n}''/" "02_cases_jets.py"')
+                    os.system('sed -i "13s/.*/'f'iter={i}''/" "02_cases_jets.py"')
+                    os.system('sed -i "14s/.*/'f'types=[\x27{type}\x27]''/" "02_cases_jets.py"')
+                    os.system('sed -i "15s/.*/'f'tevs=[{tev}]''/" "02_cases_jets.py"')
+                    os.system('sed -i "16s/.*/'f'mass={mass}''/" "02_cases_jets.py"')
 
-                    os.system('python cases_jets.py')
+                    os.system('python 02_cases_jets.py')
 
                     ######################
 
-                    os.system('sed -i "5s/.*/'f'mass={mass}''/" "cases_hepmc_reader.py"')
-                    os.system('sed -i "6s/.*/'f'n={n}''/" "cases_hepmc_reader.py"')
-                    os.system('sed -i "7s/.*/'f'iter={i}''/" "cases_hepmc_reader.py"')
-                    os.system('sed -i "9s/.*/'f'types=[\x27{type}\x27]''/" "cases_hepmc_reader.py"')
-                    os.system('sed -i "11s/.*/'f'tevs=[{tev}]''/" "cases_hepmc_reader.py"')
+                    os.system('sed -i "5s/.*/'f'mass={mass}''/" "05_cases_hepmc_reader.py"')
+                    os.system('sed -i "6s/.*/'f'n={n}''/" "05_cases_hepmc_reader.py"')
+                    os.system('sed -i "7s/.*/'f'iter={i}''/" "05_cases_hepmc_reader.py"')
+                    os.system('sed -i "9s/.*/'f'types=[\x27{type}\x27]''/" "05_cases_hepmc_reader.py"')
+                    os.system('sed -i "11s/.*/'f'tevs=[{tev}]''/" "05_cases_hepmc_reader.py"')
 
-                    os.system('python cases_hepmc_reader.py')
+                    os.system('python 05_cases_hepmc_reader.py')
 
-                    os.system('sed -i "7s/.*/'f'mass={mass}''/" "cases_photons_data.py"')
-                    os.system('sed -i "8s/.*/'f'n={n}''/" "cases_photons_data.py"')
+                    os.system('sed -i "7s/.*/'f'mass={mass}''/" "06_cases_photons_data.py"')
+                    os.system('sed -i "8s/.*/'f'n={n}''/" "06_cases_photons_data.py"')
                     os.system('sed'
-                              ' -i "9s/.*/'f'iter={i}''/" "cases_photons_data.py"')
-                    os.system('sed -i "10s/.*/'f'types=[\x27{type}\x27]''/" "cases_photons_data.py"')
-                    os.system('sed -i "11s/.*/'f'tevs=[{tev}]''/" "cases_photons_data.py"')
+                              ' -i "9s/.*/'f'iter={i}''/" "06_cases_photons_data.py"')
+                    os.system('sed -i "10s/.*/'f'types=[\x27{type}\x27]''/" "06_cases_photons_data.py"')
+                    os.system('sed -i "11s/.*/'f'tevs=[{tev}]''/" "06_cases_photons_data.py"')
 
-                    os.system('python cases_photons_data.py')
+                    os.system('python 06_cases_photons_data.py')
 
                 if (os.path.isfile(f'./{mass}/{tev}/{type}/{i}/clean/photon_df-{type}_iter{i:03}_card{n}_{tev}.xlsx'))\
                         and len(glob.glob(f"./{mass}/{tev}/{type}/{i}/raw/*.hepmc")) != 0:

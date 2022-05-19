@@ -5,10 +5,10 @@ from pathlib import Path
 import pandas as pd
 from my_funcs import my_arctan
 import sys
-CMSdet_radius = 1.29 # meters
-CMSdet_semilength = 2.935
-ATLASdet_radius= 1.775
-ATLASdet_semilength = 4.050
+#CMSdet_radius = 1.775 # meters
+#CMSdet_semilength = 4.050
+ATLASdet_radius= 1.4
+ATLASdet_semilength = 2.9
 
 mass_conversion = 1.78266192*10**(-27)	#GeV to kg
 p_conversion = 5.344286*10**(-19)	#GeV to kg.m/s
@@ -25,6 +25,7 @@ def plot_config(figsize,xtitle,ytitle,xsize, ysize, xtsize, ytsize):
 
 def pipeline(detec_radius, detec_semilength, detec_name):
 
+    z_prompts=[]
     z_origin = []
     pts = []
     pzs = []
@@ -66,14 +67,11 @@ def pipeline(detec_radius, detec_semilength, detec_name):
         z_detec = detec_semilength * 1000
 
         # Define our holder for pairs:
-        photons = []
-        pairs = []
-        #print(pairs)
         pt_dum = 0
         ix = 1
         for photon in holder['a']:
             info = dict()
-            info['event'] = event
+            info['Event'] = int(event)
 
             vertex = str(photon[-1])
             px, py, pz = [p_scaler*ix for ix in photon[0:3]]
@@ -85,10 +83,9 @@ def pipeline(detec_radius, detec_semilength, detec_name):
             Et = np.sqrt(mass_ph ** 2 + pt ** 2)
 
             # print(mass_ph)
-            photons.append([r,z])
             info['id'] = ix
-            info['r'] = r
-            info['z'] = z
+            info['r'] = r / r_detec
+            info['z'] = z / z_detec
             info['px'] = px
             info['py'] = py
             info['pt'] = pt
@@ -99,15 +96,11 @@ def pipeline(detec_radius, detec_semilength, detec_name):
             info['MPx'] = holder['MPx']
             ix += 1
             if r >= (r_detec) or abs(z) >= (z_detec):
-                 pairs.append(None)
-                 info['z_origin'] = np.nan
-                 info['rel_tof'] = np.nan
-                 info['eta'] = np.nan
-                 #info['MET'] = np.nan
                  dicts.append(info)
                  continue
+            elif  pt <10 :
+                continue
 
-            counter += 1
 
             # Calculating the z_origin of each photon
             v_z = np.array([0, 0, 1])  # point in the z axis
@@ -138,9 +131,16 @@ def pipeline(detec_radius, detec_semilength, detec_name):
                 v_n = (prev_n / np.sqrt(1 + (prev_n / c_speed) ** 2)) * 1000  # m/s to mm/s
                 t_n = dist_n / v_n  # s
                 t_n = t_n * (10 ** 9)  # ns
+                tns.append(t_n)
+                #print(z)
+                ic = 0
             except KeyError:
-                t_n = 0
-
+                t_n = 0.0
+                #x= y = z = r = 0.0
+                ic = 1
+                z_prompts.append(z)
+                #print(z)
+            #print(t_n)
             # Now, time of the photon
             vx = (c_speed * px / np.linalg.norm(d_ph)) * 1000  # mm/s
             vy = (c_speed * py / np.linalg.norm(d_ph)) * 1000  # mm/s
@@ -187,12 +187,19 @@ def pipeline(detec_radius, detec_semilength, detec_name):
 
             prompt_tof = (10**9)*np.sqrt(rf**2+zf**2)/(c_speed*1000)
             rel_tof = tof - prompt_tof
-            # (Pseudo)rapidity
-
             phi = my_arctan(y_final, x_final)
 
             theta = np.arctan2(rf, zf)
             nu = -np.log(np.tan(theta / 2))
+
+            #print(r_detec/np.tan(2*np.arctan(np.exp(-1.475))))
+
+            if 1.37 < abs(nu) < 1.52:
+                continue
+            elif abs(nu) > 2.37:
+                continue
+
+            counter += 1
 
             z_origin.append(c_z[-1])
             pts.append(pt)
@@ -205,7 +212,7 @@ def pipeline(detec_radius, detec_semilength, detec_name):
             p_tofs.append(prompt_tof)
             rel_tofs.append(rel_tof)
             nus.append(nu)
-            tns.append(t_n)
+            #print(t_n)
             tphs.append(t_ph)
             trs.append(tr * (10 ** 9))
             tzs.append(tz * (10 ** 9))
@@ -215,7 +222,6 @@ def pipeline(detec_radius, detec_semilength, detec_name):
             info['eta']=nu
             info['phi']=phi
 
-            pairs.append(info)
             dicts.append(info)
 
     print(f'Detected photons in {detec_name}: {counter}')
@@ -225,18 +231,26 @@ def pipeline(detec_radius, detec_semilength, detec_name):
     Path(destiny_ims).mkdir(parents=True,exist_ok=True)
 
 
-    df = pd.DataFrame(dicts)
-    df = df.sort_values(by=['event','pt'],ascending=[True,False])
-    g = df.groupby('event', as_index=False).cumcount()+1
-    df['id'] = g
-    df = df.set_index(['event','id'])
-    #print(df.tail(20)[['pt']])
-    #print(df.shape)
+    dicts = pd.DataFrame(dicts)
+    dicts = dicts.sort_values(by=['Event','pt'],ascending=[True,False])
+    g = dicts.groupby('Event', as_index=False).cumcount()+1
+    dicts['id'] = g
+    dicts = dicts.set_index(['Event','id'])
+    #print(dicts.tail(20))
+    #print(dicts.shape)
+    #print(dicts.z.max(), dicts.z.min(), dicts.r.max())
 
-    df.to_excel(destiny_info+f'photon_df-{type}_{card}_{tev}.xlsx')
+    dicts.to_pickle(destiny_info+f'photon_df-{type}_{card}_{tev}.pickle')
+    print('df saved!')
     # Grafiquitos
     lim = 7500
     nbins = 100
+
+    plot_config((12, 8), 'Z [mm]', 'Counts', 16, 16, 14, 14)
+    plt.hist(z_prompts, bins=nbins, color='k')
+    plt.yscale('log')
+    plt.savefig(f'{destiny_ims}/{detec_name}_photons_prompt_z.jpg')
+    plt.close()
 
     plot_config((12, 8), 'Z_origin [mm]', 'Counts', 16, 16, 14, 14)
     plt.hist(z_origin, bins=nbins, color='C0')
@@ -298,7 +312,7 @@ cards = [13,14,15]
 tevs = [13]
 
 for type in types[:1]:
-    for card in cards[:1]:
+    for card in cards[:]:
         for tev in tevs[:]:
             case = f"./cases/{tev}/{type}/{card}/"
 

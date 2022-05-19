@@ -9,13 +9,13 @@ vetos = bosons + leptons + heavy_n
 print(vetos)
 
 destiny = "./data/raw/"
-types = ['VBF', 'GF']
+types = ['VBF']
 cards = [13,14,15]
 mass = {13:50,14:30,15:10}
 tevs = [13]
 
 for tev in tevs[:]:
-    for type in types[:1]:
+    for type in types[:]:
         for card in cards[:]:
 
             Path(destiny).mkdir(exist_ok=True, parents=True)
@@ -41,15 +41,9 @@ for tev in tevs[:]:
                     i+=1
                 elif line[0] == "P":
                     if (abs(int(line[2])) not in vetos) and (line[8] == '1'):
-                        px, py, pz = [float(i) for i in line[3:6]]
-                        pt = np.sqrt(px ** 2 + py ** 2)
-                        theta = np.arctan2(pt, pz)
-                        nu = -np.log(np.tan(theta / 2))
-                        if abs(nu) <= 4.5:
-                            #print(nu)
-                            data = ' '.join(line[3:7])
-                            #print(data)
-                            prej.write(f'P {data}\n')
+                        data = ' '.join(line[3:7])
+                        #print(data)
+                        prej.write(f'P {data}\n')
 
             df.close()
             prej.close()

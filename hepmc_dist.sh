@@ -3,7 +3,7 @@
 
 folder_destiny="/home/cristian/Desktop/HEP_Jones/scripts/data/raw"
 
-tipos="VBF"
+tipos="VBF GF"
 runs="01 02 03"
 #runs="02"
 for tipo in ${tipos}
@@ -23,10 +23,10 @@ for tipo in ${tipos}
 			then
 			#echo "hola"
 			file_gz=("$(ls -d *.hepmc.gz)")
-			echo "${file_gz}"
 			gzip -dk "${file_gz}"
 		fi
 		file_mc=("$(ls -d *.hepmc)")
+		echo "${file_mc}"
 		file_final="$(echo "${file_mc}" | sed 's/_pythia8_events//')"
 		cp "${file_mc}" "${folder_destiny}/${file_final}"	
 		cd ..

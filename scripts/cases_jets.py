@@ -66,13 +66,13 @@ for tev in tevs[:]:
 
             prej.close()
             jets_df=pd.DataFrame(jet_list, columns=outputs)
-            jets_df = jets_df.set_index(["Event","id"])
+            jets_df = jets_df.set_index(["event","id"])
             #print(jets_df['pt'].min())
 
-            plt.hist(jets_df.pt)
+            #plt.hist(jets_df.pt)
             #plt.show()
-            plt.savefig(destiny + f"{type}_{card}_{tev}.png")
-            plt.close()
+            #plt.savefig(destiny + f"{type}_{card}_{tev}.png")
+            #plt.close()
             jets_df.to_pickle(destiny + file_out)
 
             #jets.close()

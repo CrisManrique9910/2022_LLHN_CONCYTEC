@@ -4,11 +4,11 @@ from pathlib import Path
 
 types = ['VBF','GF']
 cards = [13,14,15]
-tevs = [13]
+tevs = [8,13]
 
-for type in types[:1]:
-    for card in cards[:]:
-        for tev in tevs[:]:
+for type in types[1:]:
+    for card in cards[:1]:
+        for tev in tevs[:1]:
 
             # Programming Parameters
 
@@ -24,11 +24,11 @@ for type in types[:1]:
             neutralinos = [9900016,9900014,9900012]
             neutrinos = [12,14,16,18]
 
-            ATLAS_ECAL_r = 1.775 # meters
-            ATLAS_ECAL_z = 4.050
-            ATLAS_HCAL_r = 2.789
-            ATLAS_HCAL_z = 5.549
-            active_ratio = 0.5
+            ATLAS_ECAL_r = 1.4  # meters
+            ATLAS_ECAL_z = 2.9
+            ATLAS_HCAL_r = 4.25 - 0.1
+            ATLAS_HCAL_z = 5.5 - 0.1
+            active_ratio = 1.0
 
             active_r = (ATLAS_ECAL_r + active_ratio*(ATLAS_HCAL_r - ATLAS_ECAL_r))*1000 #mm
             active_z = (ATLAS_ECAL_z + active_ratio*(ATLAS_HCAL_z - ATLAS_ECAL_z))*1000
@@ -111,6 +111,10 @@ for type in types[:1]:
                 elif line[0] == 'P':
                     pdg = line[2]
                     #Extracting the MET of the event
+                    #try:
+                    #    in_vertex = int(line[11])
+                    #except IndexError:
+                    #    print(line)
                     in_vertex = int(line[11])
                     if (in_vertex == 0) and (abs(int(pdg)) not in neutrinos):
                         tpx += float(line[3]) * p_scaler

@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.ticker import FormatStrFormatter
-
+from my_funcs import get_scale
 gbins = 50
 xlims={i:dict() for i in range(1,4)}
 
@@ -55,7 +55,7 @@ def format_exponent(ax, axis='y',size=13):
     return ax
 
 def z0_tof():
-    for col in ['z_origin1','rel_tof'][:]:
+    for col in ['z_origin1','rel_tof','pt'][:]:
         txmin, txmax = textpos[col]
         cut = cuts[col]
         data = df[(df['select']==True)][[col]]
@@ -63,7 +63,7 @@ def z0_tof():
         #print(maxi)
         data = df[['MET_bin1']].join(data)
         data.columns = ['MET_bin1',col]
-        events=data.shape[0]
+        events=round(get_scale(tev,type,mass[card])*data.shape[0])
         data = data[(data[col] <= cut) & (data[col] >= -cut)]
         maxi = max(np.abs(data[col]))
 
@@ -75,10 +75,10 @@ def z0_tof():
 
         fig, ax = plt.subplots(figsize=(8, 6))
 
-        if col == 'rel_tof':
-            gbins = np.linspace(0,maxi,51)
         if col == 'z_origin1':
             gbins = np.linspace(-maxi,maxi,51)
+        else:
+            gbins = np.linspace(0, maxi, 51)
 
         #plt.ticklabel_format(axis='y', style='sci',scilimits=(0,0))
         ax.hist([data[data['MET_bin1']==label][col] for label in met_labels],color=metcolors,
@@ -118,23 +118,23 @@ limits_more_t = [-4,0.4,1.2,1.4,1.6,1.9,4]
 
 metcolors= ['C3','C2','C1','C0']
 met_labels = ['BKG','CR1','CR2','SR']
-cuts = {'z_origin1':4000,'rel_tof':7}
+cuts = {'z_origin1':4000,'rel_tof':7,'pt':np.inf}
 xlabels = {'z_origin1':'$\mathregular{{\Delta}z_{\gamma}}$ [mm]',
-           'rel_tof':'$\mathregular{t_{\gamma}}$ [ns]'}
-textpos = {'z_origin1':[0.04,0.74],'rel_tof':[0.98,0.47]}
-halig = {'z_origin1':'left','rel_tof':'right'}
+           'rel_tof':'$\mathregular{t_{\gamma}}$ [ns]', 'pt':'PT [GeV]'}
+textpos = {'z_origin1':[0.04,0.74],'rel_tof':[0.98,0.47],'pt':[0.98,0.47]}
+halig = {'z_origin1':'left','rel_tof':'right','pt':'right'}
 filter = 'rel_tof'
 types = ['VBF', 'GF']
 names = {'VBF':'Vector Boson Fusion','GF':'Gluon Fusion'}
 cards = [13,14,15]
 mass = {13:50,14:30,15:10}
-tevs = [8]
+tevs = [8, 13]
 
-for tev in tevs[:]:
-    for type in types[:1]:
-        for card in cards[:1]:
+for tev in tevs[:1]:
+    for type in types[:]:
+        for card in cards[:]:
             g = 1
-            case = f"./paper/{type}/{card}/"
+            case = f"./paper/{tev}/{type}/{card}/"
             #case = f"./cases/{type}/{card}/{tev}/images/ATLAS"
             Path(case).mkdir(parents=True, exist_ok=True)
             file_in = f'data/clean/photon_df-{type}_{card}_{tev}.xlsx'
@@ -161,7 +161,7 @@ for tev in tevs[:]:
             df['z_origin1',1] = df['z_origin',1]
             df['z_origin1', 2] = df['z_origin', 2]
             df['z_origin'] = np.abs(df['z_origin'])
-            df = df.loc[((df.z[1]<semilength) & (df.z[2]<semilength))& ((df.r[1]<radius) & (df.r[2]<radius))]
+            df = df.loc[((df.z[1]<1) & (df.z[2]<1))& ((df.r[1]<1) & (df.r[2]<1))]
             count1 = df.shape[0]
             extra1 = df.loc[(df.z_origin[1] > max_zo) | (df.z_origin[2] > max_zo)].shape[0]
             ##### INSIDE THE DETECTOR
@@ -192,6 +192,18 @@ for tev in tevs[:]:
                 ('select', 2)
             ] = True
 
+            df['eta'] = np.abs(df['eta'])
+            df = df.loc[(df.eta[1] < 2.37) & (df.eta[2] < 2.37)]
+            count4 = df.shape[0]
+            extra4 = df.loc[(df.z_origin[1] > max_zo) | (df.z_origin[2] > max_zo)].shape[0]
+
+            df = df.loc[((df.eta[1]<1.37) | (df.eta[1]>1.52)) & ((df.eta[2]<1.37) | (df.eta[2]>1.52))]
+            count5 = df.shape[0]
+            extra5 = df.loc[(df.z_origin[1] > max_zo) | (df.z_origin[2] > max_zo)].shape[0]
+
+            df = df.loc[(df.eta[1]<1.37) | (df.eta[2]<1.37)]
+            count6 = df.shape[0]
+            extra6 = df.loc[(df.z_origin[1] > max_zo) | (df.z_origin[2] > max_zo)].shape[0]
             #print(df.select.sum())
             g = z0_tof()
             #print(df['MET_bin'][1].unique())
@@ -205,18 +217,6 @@ for tev in tevs[:]:
             count3 = df.shape[0]
             extra3 = df.loc[(df.z_origin[1] > max_zo) | (df.z_origin[2] > max_zo)].shape[0]
 
-            df['eta'] = np.abs(df['eta'])
-            df = df.loc[(df.eta[1]<2.37) & (df.eta[2]<2.37)]
-            count4 = df.shape[0]
-            extra4 = df.loc[(df.z_origin[1] > max_zo) | (df.z_origin[2] > max_zo)].shape[0]
-
-            df = df.loc[((df.eta[1]<1.37) | (df.eta[1]>1.52)) & ((df.eta[2]<1.37) | (df.eta[2]>1.52))]
-            count5 = df.shape[0]
-            extra5 = df.loc[(df.z_origin[1] > max_zo) | (df.z_origin[2] > max_zo)].shape[0]
-
-            df = df.loc[(df.eta[1]<1.37) | (df.eta[2]<1.37)]
-            count6 = df.shape[0]
-            extra6 = df.loc[(df.z_origin[1] > max_zo) | (df.z_origin[2] > max_zo)].shape[0]
             g = z0_tof()
             #print(count6,extra6)
 
@@ -271,9 +271,10 @@ for tev in tevs[:]:
             print(f'          Pseudorapidity mayor a 2.37:{count4: 11}{extra4: 18}')
             print(f'Caida de 1 en la zona de intersección:{count5: 11}{extra5: 18}')
             print(f'          Caida de ambos en el endcap:{count6: 11}{extra6: 18}')
-
             # print(outliers)
-            #print(table)
+
+            table = table*get_scale(tev,type,mass[card])
+            events = np.sum(table)
             nbins = np.array(range(table.shape[2]+1))+0.5
 
             fig, axs = plt.subplots(nrows=2, ncols=3, figsize=(14,8))
@@ -308,3 +309,11 @@ for tev in tevs[:]:
             fig.savefig(case + f'{type}_{mass[card]}_bins_{radius}_{semilength}_max{filter}.png',bbox_inches='tight')
             #plt.show()
             plt.close()
+
+            message = ''
+            for idx,region in enumerate(met_labels):
+                message += f'{region:3} \t{np.sum(table[idx]):.2f}  \t{100*np.sum(table[idx])/events:.2f} %\n'
+
+            with open(case + 'region_dist.txt','w') as file:
+                file.write(message)
+

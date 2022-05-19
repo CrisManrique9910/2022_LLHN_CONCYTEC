@@ -10,13 +10,13 @@ from my_funcs import my_arctan
 destiny = "./data/clean/"
 
 outputs=["Event","id", "px", "py", "pz", "pt", "eta", "phi", "E"]
-types = ['VBF', 'GF']
+types = ['VBF']
 cards = [13,14,15]
 mass = {13:50,14:30,15:10}
 tevs = [13]
 
 for tev in tevs[:]:
-    for type in types[:1]:
+    for type in types[:]:
         for card in cards[:]:
 
             jet_list=[]
@@ -44,9 +44,7 @@ for tev in tevs[:]:
                         inc_jets = sorted_by_pt(cluster.inclusive_jets(20.0))
                         for ix, jet in enumerate(inc_jets):
                             jet_list.append([i-1,ix, jet.px(), jet.py(), jet.pz(), jet.pt(), jet.eta(), jet.phi(), jet.E()])
-                            #print(np.arctan2(jet.px(), jet.py()), my_arctan(jet.py(),jet.px()), jet.phi())
-                            #jets.write(f'{i} {ix} {jet.px()} {jet.py()} {jet.pz()} {jet.pt()} {jet.eta()} {jet.phi()} {jet.E()}\n')
-                    #jets.write(f"{* outputs}\n")
+                            #print(jet.phi())
                     print(f"{type}_{card}_{tev} Event {i}")
 
                     i+=1
@@ -61,7 +59,7 @@ for tev in tevs[:]:
             inc_jets = sorted_by_pt(cluster.inclusive_jets(20.0))
             for ix, jet in enumerate(inc_jets):
                 jet_list.append([i-1, ix, jet.px(), jet.py(), jet.pz(), jet.pt(), jet.eta(), jet.phi(), jet.E()])
-                #jets.write(f'J {ix} {jet.px()} {jet.py()} {jet.pz()} {jet.pt()} {jet.eta()} {jet.phi()} {jet.E()}\n')
+                #print(jet.phi())
                 #print(f"{type}_{card}_{tev} Event {i }")
 
             prej.close()

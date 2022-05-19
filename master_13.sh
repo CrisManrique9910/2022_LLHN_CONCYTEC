@@ -3,5 +3,5 @@
 
 /home/cristian/Programs/MG5_aMC_v2_9_2/bin/mg5_aMC mg5_launches.txt
 
-bash param_dist.sh 
+bash param_dist_13.sh 
 bash hepmc_dist.sh 

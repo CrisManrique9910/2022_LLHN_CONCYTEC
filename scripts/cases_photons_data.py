@@ -5,15 +5,12 @@ from pathlib import Path
 import pandas as pd
 from my_funcs import my_arctan
 
-CMSdet_radius = 1.29 # meters
-CMSdet_semilength = 2.935
-ATLASdet_radius= 1.775
-ATLASdet_semilength = 4.050
+ATLASdet_radius= 1.4
+ATLASdet_semilength = 2.9
 
 mass_conversion = 1.78266192*10**(-27)	#GeV to kg
 p_conversion = 5.344286*10**(-19)	#GeV to kg.m/s
 c_speed = 299792458	#m/s
-
 
 def plot_config(figsize,xtitle,ytitle,xsize, ysize, xtsize, ytsize):
     plt.figure(figsize=figsize)
@@ -97,8 +94,8 @@ def pipeline(detec_radius, detec_semilength, detec_name):
             ix += 1
             # print(mass_ph)
             photons.append([r,z])
-            info['r'] = r
-            info['z'] = z
+            info['r'] = r/r_detec
+            info['z'] = z/z_detec
             info['px'] = px
             info['py'] = py
             info['pt'] = pt
@@ -309,11 +306,11 @@ def pipeline(detec_radius, detec_semilength, detec_name):
 
 types = ['VBF','GF']
 cards = [13,14,15]
-tevs = [13]
+tevs = [8,13]
 
-for type in types[:1]:
+for type in types[:]:
     for card in cards[:]:
-        for tev in tevs[:]:
+        for tev in tevs[:1]:
             case = f"./cases/{tev}/{type}/{card}/"
 
             file_in = f'./data/clean/recollection_v4-{type}_{card}_{tev}.json'
