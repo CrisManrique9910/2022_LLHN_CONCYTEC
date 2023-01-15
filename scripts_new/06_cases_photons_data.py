@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 from my_funcs import my_arctan
 import sys
+import glob
 #CMSdet_radius = 1.775 # meters
 #CMSdet_semilength = 4.050
 ATLASdet_radius= 1.4
@@ -41,188 +42,202 @@ def pipeline(detec_radius, detec_semilength, detec_name):
     tzs = []
     counter = 0
     dicts = []
-    for event in list(data.keys())[:]:
-        print(f'RUNNING: {type} {card} {tev} - {detec_name} - Event {event}')
-        holder = data[event]
-        params = holder['params']
-        # Defining scaler according to parameters units
-        if params[0] == 'GEV':
-            p_scaler = 1  # GeV to GeV
-        elif params[0] == 'MEV':
-            p_scaler = 1 / 1000  # MeV to GeV
-        else:
-            print(params[0])
-            continue
 
-        if params[1] == 'MM':
-            d_scaler = 1  # mm to mm
-        elif params[1] == 'CM':
-            d_scaler = 10  # cm to mm
-        else:
-            print(params[1])
-            continue
+    for file_in in sorted(glob.glob(f'./data/clean/recollection_v4-{type}_{card}_{tev}-*.json')):
 
-        # Adjusting detector boundaries
-        r_detec = detec_radius * 1000  # m to mm
-        z_detec = detec_semilength * 1000
+        print(file_in)
+        try:
+            del data
+        except UnboundLocalError:
+            file_in
 
-        # Define our holder for pairs:
-        pt_dum = 0
-        ix = 1
-        for photon in holder['a']:
-            info = dict()
-            info['Event'] = int(event)
+        with open(file_in, 'r') as file:
+            data = json.load(file)
+        print(len(data.keys()))
 
-            vertex = str(photon[-1])
-            px, py, pz = [p_scaler*ix for ix in photon[0:3]]
-            x, y, z = [d_scaler*ix for ix in holder['v'][vertex][0:3]]
-            mass_ph = photon[-2] * p_scaler
-            r = np.sqrt(x ** 2 + y ** 2)
-            # Calculating transverse momentum
-            pt = np.sqrt(px ** 2 + py ** 2)
-            Et = np.sqrt(mass_ph ** 2 + pt ** 2)
-
-            # print(mass_ph)
-            info['id'] = ix
-            info['r'] = r / r_detec
-            info['z'] = z / z_detec
-            info['px'] = px
-            info['py'] = py
-            info['pt'] = pt
-            info['pz'] = pz
-            info['ET'] = Et
-            info['MET'] = holder['MET']
-            info['MPy'] = holder['MPy']
-            info['MPx'] = holder['MPx']
-            ix += 1
-            if r >= (r_detec) or abs(z) >= (z_detec):
-                 dicts.append(info)
-                 continue
-            elif  pt <10 :
+        for event in list(data.keys())[:]:
+            print(f'RUNNING: {type} {card} {tev} - {detec_name} - Event {event}')
+            holder = data[event]
+            params = holder['params']
+            # Defining scaler according to parameters units
+            if params[0] == 'GEV':
+                p_scaler = 1  # GeV to GeV
+            elif params[0] == 'MEV':
+                p_scaler = 1 / 1000  # MeV to GeV
+            else:
+                print(params[0])
                 continue
 
+            if params[1] == 'MM':
+                d_scaler = 1  # mm to mm
+            elif params[1] == 'CM':
+                d_scaler = 10  # cm to mm
+            else:
+                print(params[1])
+                continue
 
-            # Calculating the z_origin of each photon
-            v_z = np.array([0, 0, 1])  # point in the z axis
-            d_z = np.array([0, 0, 1])  # z axis vector
+            # Adjusting detector boundaries
+            r_detec = detec_radius * 1000  # m to mm
+            z_detec = detec_semilength * 1000
 
-            v_ph = np.array([x, y, z])
-            d_ph = np.array([px, py, pz])
+            # Define our holder for pairs:
 
-            n = np.cross(d_z, d_ph)
+            ix = 1
 
-            n_ph = np.cross(d_ph, n)
+            for photon in holder['a']:
+                info = dict()
+                info['Event'] = int(event)
 
-            c_z = v_z + (((v_ph - v_z) @ n_ph) / (d_z @ n_ph)) * d_z
+                vertex = str(photon[-1])
+                px, py, pz = [p_scaler*ix for ix in photon[0:3]]
+                x, y, z = [d_scaler*ix for ix in holder['v'][vertex][0:3]]
+                mass_ph = photon[-2] * p_scaler
+                r = np.sqrt(x ** 2 + y ** 2)
+                # Calculating transverse momentum
+                pt = np.sqrt(px ** 2 + py ** 2)
+                Et = np.sqrt(mass_ph ** 2 + pt ** 2)
 
-            # Calculating the time of flight
-            try:
-                # TIme of the neutralino
-                vertex_n = str(holder['n5'][vertex][-1])
-                mass_n = holder['n5'][vertex][-2] * p_scaler
-                # print(mass_n)
-                px_n, py_n, pz_n = [p_scaler*ix for ix in holder['n5'][vertex][0:3]]
-                x_n, y_n, z_n = [d_scaler*ix for ix in holder['v'][vertex_n][0:3]]
-                # print(vertex_n)
-                dist_n = np.sqrt((x - x_n) ** 2 + (y - y_n) ** 2 + (z - z_n) ** 2)
-                p_n = np.sqrt(px_n ** 2 + py_n ** 2 + pz_n ** 2)
+                # print(mass_ph)
+                info['id'] = ix
+                info['r'] = r / r_detec
+                info['z'] = z / z_detec
+                info['px'] = px
+                info['py'] = py
+                info['pt'] = pt
+                info['pz'] = pz
+                info['ET'] = Et
+                info['MET'] = holder['MET']
+                info['MPy'] = holder['MPy']
+                info['MPx'] = holder['MPx']
+                ix += 1
+                if r >= (r_detec) or abs(z) >= (z_detec):
+                     dicts.append(info)
+                     continue
+                elif  pt <10 :
+                    continue
 
-                prev_n = (p_n * p_conversion) / (mass_n * mass_conversion)
-                v_n = (prev_n / np.sqrt(1 + (prev_n / c_speed) ** 2)) * 1000  # m/s to mm/s
-                t_n = dist_n / v_n  # s
-                t_n = t_n * (10 ** 9)  # ns
-                tns.append(t_n)
-                #print(z)
-                ic = 0
-            except KeyError:
-                t_n = 0.0
-                #x= y = z = r = 0.0
-                ic = 1
-                z_prompts.append(z)
-                #print(z)
-            #print(t_n)
-            # Now, time of the photon
-            vx = (c_speed * px / np.linalg.norm(d_ph)) * 1000  # mm/s
-            vy = (c_speed * py / np.linalg.norm(d_ph)) * 1000  # mm/s
-            vz = (c_speed * pz / np.linalg.norm(d_ph)) * 1000  # mm/s
 
-            tr = (-(x * vx + y * vy) + np.sqrt(
-                (x * vx + y * vy) ** 2 + (vx ** 2 + vy ** 2) * (r_detec ** 2 - r ** 2))) / (
-                     (vx ** 2 + vy ** 2))
+                # Calculating the z_origin of each photon
+                v_z = np.array([0, 0, 1])  # point in the z axis
+                d_z = np.array([0, 0, 1])  # z axis vector
 
-            if tr < 0:
-                tr = (-(x * vx + y * vy) - np.sqrt(
-                    (x * vx + y * vy) ** 2 + (vx ** 2 + vy ** 2) * ((r_detec) ** 2 - r ** 2))) / (
+                v_ph = np.array([x, y, z])
+                d_ph = np.array([px, py, pz])
+
+                n = np.cross(d_z, d_ph)
+
+                n_ph = np.cross(d_ph, n)
+
+                c_z = v_z + (((v_ph - v_z) @ n_ph) / (d_z @ n_ph)) * d_z
+
+                # Calculating the time of flight
+                try:
+                    # TIme of the neutralino
+                    vertex_n = str(holder['n5'][vertex][-1])
+                    mass_n = holder['n5'][vertex][-2] * p_scaler
+                    # print(mass_n)
+                    px_n, py_n, pz_n = [p_scaler*ix for ix in holder['n5'][vertex][0:3]]
+                    x_n, y_n, z_n = [d_scaler*ix for ix in holder['v'][vertex_n][0:3]]
+                    # print(vertex_n)
+                    dist_n = np.sqrt((x - x_n) ** 2 + (y - y_n) ** 2 + (z - z_n) ** 2)
+                    p_n = np.sqrt(px_n ** 2 + py_n ** 2 + pz_n ** 2)
+
+                    prev_n = (p_n * p_conversion) / (mass_n * mass_conversion)
+                    v_n = (prev_n / np.sqrt(1 + (prev_n / c_speed) ** 2)) * 1000  # m/s to mm/s
+                    t_n = dist_n / v_n  # s
+                    t_n = t_n * (10 ** 9)  # ns
+                    tns.append(t_n)
+                    #print(z)
+                    ic = 0
+                except KeyError:
+                    t_n = 0.0
+                    #x= y = z = r = 0.0
+                    ic = 1
+                    z_prompts.append(z)
+                    #print(z)
+                #print(t_n)
+                # Now, time of the photon
+                vx = (c_speed * px / np.linalg.norm(d_ph)) * 1000  # mm/s
+                vy = (c_speed * py / np.linalg.norm(d_ph)) * 1000  # mm/s
+                vz = (c_speed * pz / np.linalg.norm(d_ph)) * 1000  # mm/s
+
+                tr = (-(x * vx + y * vy) + np.sqrt(
+                    (x * vx + y * vy) ** 2 + (vx ** 2 + vy ** 2) * (r_detec ** 2 - r ** 2))) / (
                          (vx ** 2 + vy ** 2))
 
-            tz = (np.sign(vz) * z_detec - z) / vz
+                if tr < 0:
+                    tr = (-(x * vx + y * vy) - np.sqrt(
+                        (x * vx + y * vy) ** 2 + (vx ** 2 + vy ** 2) * ((r_detec) ** 2 - r ** 2))) / (
+                             (vx ** 2 + vy ** 2))
 
-            # Now we see which is the impact time
-            if tr < tz:
-                # rf = r_detec
-                rf = r_detec
-                zf = z + vz * tr
-                t_ph = tr * (10 ** 9)
+                tz = (np.sign(vz) * z_detec - z) / vz
 
-                x_final = x + vx * tr
-                y_final = y + vy * tr
+                # Now we see which is the impact time
+                if tr < tz:
+                    # rf = r_detec
+                    rf = r_detec
+                    zf = z + vz * tr
+                    t_ph = tr * (10 ** 9)
 
-            elif tz < tr:
-                rf = np.sqrt((y + vy * tz) ** 2 + (x + vx * tz) ** 2)
-                zf = np.sign(vz) * z_detec
-                t_ph = tz * (10 ** 9)
+                    x_final = x + vx * tr
+                    y_final = y + vy * tr
 
-                x_final = x + vx * tz
-                y_final = y + vy * tz
+                elif tz < tr:
+                    rf = np.sqrt((y + vy * tz) ** 2 + (x + vx * tz) ** 2)
+                    zf = np.sign(vz) * z_detec
+                    t_ph = tz * (10 ** 9)
 
-            else:
-                rf = r_detec
-                zf = np.sign(vz) * z_detec
-                t_ph = tz * (10 ** 9)
+                    x_final = x + vx * tz
+                    y_final = y + vy * tz
 
-                x_final = x + vx * tz
-                y_final = y + vy * tz
+                else:
+                    rf = r_detec
+                    zf = np.sign(vz) * z_detec
+                    t_ph = tz * (10 ** 9)
 
-            tof = t_ph + t_n
+                    x_final = x + vx * tz
+                    y_final = y + vy * tz
 
-            prompt_tof = (10**9)*np.sqrt(rf**2+zf**2)/(c_speed*1000)
-            rel_tof = tof - prompt_tof
-            phi = my_arctan(y_final, x_final)
+                tof = t_ph + t_n
 
-            theta = np.arctan2(rf, zf)
-            nu = -np.log(np.tan(theta / 2))
+                prompt_tof = (10**9)*np.sqrt(rf**2+zf**2)/(c_speed*1000)
+                rel_tof = tof - prompt_tof
+                phi = my_arctan(y_final, x_final)
 
-            #print(r_detec/np.tan(2*np.arctan(np.exp(-1.475))))
+                theta = np.arctan2(rf, zf)
+                nu = -np.log(np.tan(theta / 2))
 
-            if 1.37 < abs(nu) < 1.52:
-                continue
-            elif abs(nu) > 2.37:
-                continue
+                #print(r_detec/np.tan(2*np.arctan(np.exp(-1.475))))
 
-            counter += 1
+                if 1.37 < abs(nu) < 1.52:
+                    continue
+                elif abs(nu) > 2.37:
+                    continue
 
-            z_origin.append(c_z[-1])
-            pts.append(pt)
-            pzs.append(pz)
-            tofs.append(tof)
-            if abs(nu) < abs(-np.log(np.tan(np.arctan2(r_detec, z_detec) / 2))):
-                tofs_b.append(tof)
-            else:
-                tofs_e.append(tof)
-            p_tofs.append(prompt_tof)
-            rel_tofs.append(rel_tof)
-            nus.append(nu)
-            #print(t_n)
-            tphs.append(t_ph)
-            trs.append(tr * (10 ** 9))
-            tzs.append(tz * (10 ** 9))
+                counter += 1
 
-            info['z_origin']=c_z[-1]
-            info['rel_tof']=rel_tof
-            info['eta']=nu
-            info['phi']=phi
+                z_origin.append(c_z[-1])
+                pts.append(pt)
+                pzs.append(pz)
+                tofs.append(tof)
+                if abs(nu) < abs(-np.log(np.tan(np.arctan2(r_detec, z_detec) / 2))):
+                    tofs_b.append(tof)
+                else:
+                    tofs_e.append(tof)
+                p_tofs.append(prompt_tof)
+                rel_tofs.append(rel_tof)
+                nus.append(nu)
+                #print(t_n)
+                tphs.append(t_ph)
+                trs.append(tr * (10 ** 9))
+                tzs.append(tz * (10 ** 9))
 
-            dicts.append(info)
+                info['z_origin']=c_z[-1]
+                info['rel_tof']=rel_tof
+                info['eta']=nu
+                info['phi']=phi
+
+                dicts.append(info)
 
     print(f'Detected photons in {detec_name}: {counter}')
 
@@ -308,7 +323,7 @@ def pipeline(detec_radius, detec_semilength, detec_name):
 
 
 types = ['VBF','GF']
-cards = [13,14,15]
+cards = [15]
 tevs = [13]
 
 for type in types[:1]:
@@ -316,12 +331,7 @@ for type in types[:1]:
         for tev in tevs[:]:
             case = f"./cases/{tev}/{type}/{card}/"
 
-            file_in = f'./data/clean/recollection_v4-{type}_{card}_{tev}.json'
-
             destiny_info = './data/clean/'
             destiny_ims0 = case
-
-            with open(file_in, 'r') as file:
-                data = json.load(file)
 
             pipeline(ATLASdet_radius,ATLASdet_semilength,'ATLAS')

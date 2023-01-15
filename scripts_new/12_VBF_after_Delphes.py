@@ -18,14 +18,17 @@ edges = [-0.1, 30, 50, np.inf]
 labels = list(range(len(edges) - 1))
 limits_z = [0,50,100,200,300,2000]
 
-burrito = {card:{'1':np.zeros((5,7,3)), '2+':np.zeros((5,7,3))} for card in cards}
+burrito = {card:{'1':np.zeros((5,7,3)), '2+':np.zeros((5,6,3))} for card in cards}
+burrito_neg = {card:{'1':np.zeros((5,7,3)), '2+':np.zeros((5,6,3))} for card in cards}
+mets = []
 
 #print(burrito)
 for tev in tevs[:]:
     for type in types[:1]:
 
-        ymin = ymax = []
-        for card in cards[:1]:
+        ymin_p = ymax_p = []
+        ymin_n = ymax_n = []
+        for card in cards[:]:
             
             print(f'RUNNING: {type} {card} {tev} ')
             origin = f"./data/bins/{tev}/{type}/{card}/"
@@ -142,6 +145,8 @@ for tev in tevs[:]:
                 else:
                     z = int(re.search('z(.)_', jet_file).group(1)) - 1
                     t = int(re.search('t(.)_', jet_file).group(1)) - 1
+                    if '2+' in ph_file and t == 6:
+                        t -= 1
 
                 nums = df.groupby(['N']).size()
                 if '2+' in jet_file:
@@ -160,46 +165,105 @@ for tev in tevs[:]:
                     value = value.loc[value.groupby('N')['pt'].idxmax()]
                     #print(value.E.min())
                     value['met_bin'] = pd.cut(value['MET'], bins=edges, labels=labels)
-                    for bin in labels:
-                        burrito[card][key][z,t,bin] += scale*value[value.met_bin == bin].shape[0]
+                    if 'pos' in ph_file:
+                        mets.extend([{'tev':tev,'type':type,'mass':mass,'channel':key,'MET':met} for met in value['MET']])
+                        for bin in labels:
+                            burrito[card][key][z,t,bin] += scale*value[value.met_bin == bin].shape[0]
+                    elif 'neg' in ph_file:
+                        for bin in labels:
+                            burrito_neg[card][key][z, t, bin] += scale * value[value.met_bin == bin].shape[0]
                         #if t in [6] and z in [0,1] and bin == 2:
                         #    print(ph_file)
                         #    print(value[value.met_bin == bin]['MET'])
-            #print(burrito)
-            events = sum([item.sum() for item in burrito[card].values()])
-            #print(events)
-            sys.exit()
-            fig, axs = plt.subplots(nrows=5, ncols=2, figsize=(20, 30))
-            plt.subplots_adjust(left=None, bottom=0.05, right=None, top=0.95, wspace=None, hspace=0.3)
+
             for key in burrito[card].keys():
                 nbins = np.array(range(burrito[card][key].shape[1] + 1)) + 0.5
-                ix = int(key[0])-1
-                ir = 0
-                for row in axs:
-                    row[ix].hist(np.tile(nbins[:-1],(burrito[card][key].shape[-1],1)).transpose(),
-                                 bins=nbins, weights=burrito[card][key][ir], histtype='step',
-                                 stacked=False,color=['C3','C2','C0'],label=met_labels)
-                    row[ix].set_yscale('log')
-                    row[ix].set_xticks(np.array(range(burrito[card][key].shape[1])) + 1)
-                    row[ix].set_title(f'Dataset {key} ph - bin z {ir + 1}')
-                    row[ix].legend()
-                    ymax.append(row[ix].get_ylim()[1])
-                    ymin.append(row[ix].get_ylim()[0])
-                    ir+=1
-            plt.setp(axs, ylim=(min(ymin), max(ymax)))
-            plt.suptitle(f'{type} - {mass} GeV - {round(events)} events')
-            #plt.show()
-            fig.savefig(folder_ims + f'{type}_{card}_zbins_tbins_AD_scaled.png')
-            fig.savefig(paper + f'{type}_{card}_zbins_tbins_AD_scaled.png')
-            plt.close()
-            #print('De 1 a 2+:',ones1/totals1*100)
-            #print('De 2+ a 1:',ones2/totals2*100)
+                for values in burrito[card][key]:
+                    plt.hist(np.tile(nbins[:-1], (burrito[card][key].shape[-1], 1)).transpose(),
+                                 bins=nbins, weights=values, histtype='step',
+                                 stacked=False, color=['C3', 'C2', 'C0'], label=met_labels)
+                    plt.yscale('log')
+                    plt.legend()
+                    ymax_p.append(plt.gca().get_ylim()[1])
+                    ymin_p.append(plt.gca().get_ylim()[0])
+                    #plt.show()
+                    plt.close()
 
+            for key in burrito_neg[card].keys():
+                nbins = np.array(range(burrito_neg[card][key].shape[1] + 1)) + 0.5
+                for values in burrito_neg[card][key]:
+                    plt.hist(np.tile(nbins[:-1], (burrito_neg[card][key].shape[-1], 1)).transpose(),
+                                 bins=nbins, weights=values, histtype='step',
+                                 stacked=False, color=['C1', 'C6', 'C5'], label=met_labels)
+                    plt.yscale('log')
+                    plt.legend()
+                    ymax_n.append(plt.gca().get_ylim()[1])
+                    ymin_n.append(plt.gca().get_ylim()[0])
+                    #plt.show()
+                    plt.close()
+
+        '''
+        #sys.exit()
+        vround = np.vectorize(round)
         for card, data in list(burrito.items())[:]:
 
             folder_ims = f"./cases/{tev}/{type}/{card}/ATLAS/after_Delphes_and_VBF/"
             paper = f'./paper/{tev}/{type}/{card}/'
 
+            ########### POSITIVE PHOTONS ################
+            events = sum([np.sum(vround(np.sum(item,axis=1))) for item in burrito[card].values()])
+            #sys.exit()
+            fig, axs = plt.subplots(nrows=5, ncols=2, figsize=(20, 30))
+            plt.subplots_adjust(left=None, bottom=0.05, right=None, top=0.95, wspace=None, hspace=0.3)
+            for key in burrito[card].keys():
+                nbins = np.array(range(burrito[card][key].shape[1] + 1)) + 0.5
+                ix = int(key[0]) - 1
+                ir = 0
+                for row in axs:
+                    row[ix].hist(np.tile(nbins[:-1], (burrito[card][key].shape[-1], 1)).transpose(),
+                                 bins=nbins, weights=burrito[card][key][ir], histtype='step',
+                                 stacked=False, color=['C3', 'C2', 'C0'], label=met_labels)
+                    row[ix].set_yscale('log')
+                    row[ix].set_xticks(np.array(range(burrito[card][key].shape[1])) + 1)
+                    row[ix].set_title(f'Dataset {key} ph - bin z {ir + 1}')
+                    row[ix].legend()
+                    #ymax_p.append(row[ix].get_ylim()[1])
+                    #ymin_p.append(row[ix].get_ylim()[0])
+                    ir += 1
+            plt.setp(axs, ylim=(min(ymin_p), max(ymax_p)))
+            plt.suptitle(f'{type} - {mass} GeV - pos\n{events} events')
+            # plt.show()
+            fig.savefig(folder_ims + f'{type}_{card}_zbins_tbins_AD_scaled_pos.png')
+            fig.savefig(paper + f'{type}_{card}_zbins_tbins_AD_scaled_pos.png')
+            plt.close()
+
+            ###################### NEGATIVE PHOTONS #########################
+            events = sum([np.sum(vround(np.sum(item,axis=1))) for item in burrito_neg[card].values()])
+            fig, axs = plt.subplots(nrows=5, ncols=2, figsize=(20, 30))
+            plt.subplots_adjust(left=None, bottom=0.05, right=None, top=0.95, wspace=None, hspace=0.3)
+            for key in burrito_neg[card].keys():
+                nbins = np.array(range(burrito_neg[card][key].shape[1] + 1)) + 0.5
+                ix = int(key[0]) - 1
+                ir = 0
+                for row in axs:
+                    row[ix].hist(np.tile(nbins[:-1], (burrito_neg[card][key].shape[-1], 1)).transpose(),
+                                 bins=nbins, weights=burrito_neg[card][key][ir], histtype='step',
+                                 stacked=False, color=['C1', 'C6', 'C5'], label=met_labels)
+                    row[ix].set_yscale('log')
+                    row[ix].set_xticks(np.array(range(burrito_neg[card][key].shape[1])) + 1)
+                    row[ix].set_title(f'Dataset {key} ph - bin z {ir + 1}')
+                    row[ix].legend()
+                    #ymax_n.append(row[ix].get_ylim()[1])
+                    #ymin_n.append(row[ix].get_ylim()[0])
+                    ir += 1
+            plt.setp(axs, ylim=(min(ymin_n), max(ymax_n)))
+            plt.suptitle(f'{type} - {mass} - neg\nGeV - {events} events')
+            # plt.show()
+            fig.savefig(folder_ims + f'{type}_{card}_zbins_tbins_AD_scaled_neg.png')
+            fig.savefig(paper + f'{type}_{card}_zbins_tbins_AD_scaled_neg.png')
+            plt.close()
+
+            #############################
             message=''
             for key, value in list(data.items())[:]:
                 nbins = np.array(range(value.shape[1] + 1)) + 0.5
@@ -208,14 +272,16 @@ for tev in tevs[:]:
                 i = 0
                 for zbin in list(range(1,value.shape[0]+1))[:]:
                     #print(zbin)
-                    events = np.sum(value[zbin - 1])
-                    #sys.exit()
+                    #events = np.sum(value[zbin - 1])
+                    events_zones = [round(x) for x in np.sum(value[zbin - 1],axis=0)]
+                    legend_labels = [x + f' ({y} events)'.ljust(12) for x, y in list(zip(met_labels, events_zones))]
                     if i == (value.shape[0] - 1):
                         final = ']'
                     fig, ax = plt.subplots(figsize=(8, 6))
                     ax.hist(np.tile(nbins[:-1], (value.shape[-1], 1)).transpose(),
                                  bins=nbins, weights=value[zbin-1], histtype='step',
-                                 stacked=False, color=['C3', 'C2', 'C0'], label=met_labels)
+                                 stacked=False, color=['C3', 'C2', 'C0'],
+                                 label=legend_labels)
                     ax.set_yscale('log')
                     ax.set_xlabel('$\mathregular{t_{\gamma}}$ bins', fontsize=15)
                     ax.set_xticks(nbins[1:-1])
@@ -225,11 +291,11 @@ for tev in tevs[:]:
                     ax.tick_params(axis='x', which='minor', length=0,labelsize=15)
                     ax.tick_params(axis='y', labelsize=15)
                     ax.xaxis.set_minor_formatter(FormatStrFormatter("%.0f"))
-                    ax.set_xlim(0.5, 7.5)
-                    ax.set_ylim(min(ymin), max(ymax))
-                    ax.text(0.99, 0.66, f'{round(events)} Events',
+                    ax.set_xlim(0.5, value.shape[1] + 0.5)
+                    ax.set_ylim(min(ymin_p), max(ymax_p))
+                    ax.text(0.62, 0.92, f'{sum(events_zones)} events',
                             horizontalalignment="right", fontsize=14, transform=ax.transAxes)
-                    ax.text(0.99, 0.55, f'|z| interval (mm):\n[{limits_z[i]},{limits_z[i + 1]}{final}',
+                    ax.text(0.62, 0.83, f'|z| interval (mm):\n[{limits_z[i]},{limits_z[i + 1]}{final}',
                              horizontalalignment="right",fontsize=14, transform=ax.transAxes)
                     ax.legend(fontsize=15)
                     plt.tight_layout()
@@ -252,4 +318,12 @@ for tev in tevs[:]:
             with open(paper + 'region_dist.txt','w') as file:
                 file.write(message)
             #print(message)
+        '''
+        for card, value1 in burrito.items():
+            for channel, value2 in value1.items():
+                np.save(f"./data/clean/distributed_events_{card}_{type}_{tev}_{channel}ph.npy", value2)
+
+mets = pd.DataFrame(mets)
+mets.to_pickle(f"./data/clean/METs_afterDelphesAndVBF.pickle")
+#print(mets)
 

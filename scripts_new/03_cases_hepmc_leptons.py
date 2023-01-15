@@ -1,9 +1,10 @@
+import gc
 import json
 import numpy as np
 from pathlib import Path
 
 types = ['VBF', 'GF']
-cards = [13, 14, 15]
+cards = [15]
 tevs = [13]
 
 # Particle Parameters
@@ -25,6 +26,12 @@ for type in types[:1]:
             i = 0
             limit = 2
 
+            it_start = 2
+            batch = 25000
+            corte_inf = it_start * batch
+            corte_sup = corte_inf + batch * 2
+            final_part_active = True
+
             # Action
             df = open(file_in, "r")
             Path(destiny).mkdir(exist_ok=True, parents=True)
@@ -41,11 +48,21 @@ for type in types[:1]:
             d_scaler = None
 
             for sentence in df:
-                # while i<(limit+20):
-                # sentence = df.readline()
+            #while i<(limit+1000):
+            #    sentence = df.readline()
                 # print(sentence)
                 line = sentence.split()
-                if line[0] == 'E':
+                if num <= corte_inf:
+                    holder = {'v': dict(), 'l': []}
+                    if line[0] == 'E':
+                        if (num % 500) == 0:
+                            print(f'RUNNING: {type} {card} {tev} ' + f'Event {num}')
+                            print(len(data))
+                        num += 1
+                    nfile = it_start + 1
+                    continue
+                elif line[0] == 'E':
+                    #print(num)
                     # num = int(line[1])
                     if num > 0:  # Selection of relevant particles/vertices in the last event
                         # print(mpx,mpy)
@@ -62,7 +79,19 @@ for type in types[:1]:
                     # print(data)
                     holder = {'v': dict(), 'l': []}
                     i += 1
-                    print(f'RUNNING: {type} {card} {tev} ' + f'Event {num}')
+                    if (num % 500) == 0:
+                        print(f'RUNNING: {type} {card} {tev} ' + f'Event {num}')
+                        print(len(data))
+                    if num == nfile * batch:
+                        with open(destiny + file_out.replace('.json', f'-{nfile}.json'), 'w') as file:
+                            json.dump(data, file)
+                        print(f'Saved til {num - 1} in {file_out.replace(".json", f"-{nfile}.json")}')
+                        del data
+                        data = dict()
+                        nfile += 1
+                    if num == corte_sup:
+                        final_part_active = False
+                        break
                     num += 1
                 elif line[0] == 'U':
                     params = line[1:]
@@ -88,22 +117,23 @@ for type in types[:1]:
                     codes.append(pdg)
             df.close()
 
-            # Event selection for the last event
-            selection = set()
-            data[num - 1] = {'params': params, 'v': dict(), 'l': []}
-            for photon in holder['l']:
-                # SIgnal which vertex give charged leptons
-                outg_a = photon[-1]
-                data[num - 1]['l'].append(photon)
-                selection.add(outg_a)
-            for vertex in selection:
-                # select only the vertices that give charged leptons
-                data[num - 1]['v'][vertex] = holder['v'][vertex]
+            if final_part_active:
+                # Event selection for the last event
+                selection = set()
+                data[num - 1] = {'params': params, 'v': dict(), 'l': []}
+                for photon in holder['l']:
+                    # SIgnal which vertex give charged leptons
+                    outg_a = photon[-1]
+                    data[num - 1]['l'].append(photon)
+                    selection.add(outg_a)
+                for vertex in selection:
+                    # select only the vertices that give charged leptons
+                    data[num - 1]['v'][vertex] = holder['v'][vertex]
 
-            # print(data[num])
-            # print(data.keys())
+                # print(data[num])
+                # print(data.keys())
 
-            with open(destiny + file_out, 'w') as file:
-                json.dump(data, file)
+                with open(destiny + file_out.replace('.json', f'-{nfile}.json'), 'w') as file:
+                    json.dump(data, file)
 
-            print(f'RUNNING: {type} {card} {tev} ' + f'info saved in {file_out}')
+                print(f'RUNNING: {type} {card} {tev} ' + f'info saved in {file_out}')

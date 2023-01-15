@@ -5,6 +5,8 @@ from pathlib import Path
 import pandas as pd
 from my_funcs import my_arctan
 import sys
+import glob
+
 #CMSdet_radius = 1.29 # meters
 #CMSdet_semilength = 2.935
 ATLASdet_radius= 1.4
@@ -31,80 +33,92 @@ def pipeline(detec_radius, detec_semilength, detec_name):
 
     counter = 0
     dicts = []
-    for event in list(data.keys())[:]:
-        print(f'RUNNING: {type} {card} {tev} - {detec_name} - Event {event}')
-        holder = data[event]
-        params = holder['params']
-        # Defining scaler according to parameters units
-        if params[0] == 'GEV':
-            p_scaler = 1  # GeV to GeV
-        elif params[0] == 'MEV':
-            p_scaler = 1 / 1000  # MeV to GeV
-        else:
-            print(params[0])
-            continue
 
-        if params[1] == 'MM':
-            d_scaler = 1  # mm to mm
-        elif params[1] == 'CM':
-            d_scaler = 10  # cm to mm
-        else:
-            print(params[1])
-            continue
+    for file_in in sorted(glob.glob(f'./data/clean/recollection_leptons-{type}_{card}_{tev}-*.json')):
 
-        # Adjusting detector boundaries
-        r_detec = detec_radius * 1000  # m to mm
-        z_detec = detec_semilength * 1000
+        print(file_in)
+        try:
+            del data
+        except UnboundLocalError:
+            file_in
 
-        # Define our holder for pairs:
-        pt_dum = 0
-        ix = 0
-        for lepton in holder['l']:
-            info = dict()
-            info['Event'] = int(event)
-
-            vertex = str(lepton[-1])
-            pdg = lepton[0]
-            px, py, pz = [p_scaler*ix for ix in lepton[1:4]]
-            x, y, z = [d_scaler*ix for ix in holder['v'][vertex][0:3]]
-            mass = lepton[-2] * p_scaler
-            r = np.sqrt(x ** 2 + y ** 2)
-            # Calculating transverse momentum
-            pt = np.sqrt(px ** 2 + py ** 2)
-            Et = np.sqrt(mass ** 2 + pt ** 2)
-
-            if r >= (r_detec) or abs(z) >= (z_detec):
-                 continue
-            elif pt < 10:
+        with open(file_in, 'r') as file:
+            data = json.load(file)
+        #print(len(data.keys()))
+        for event in list(data.keys())[:]:
+            print(f'RUNNING: {type} {card} {tev} - {detec_name} - Event {event}')
+            holder = data[event]
+            params = holder['params']
+            # Defining scaler according to parameters units
+            if params[0] == 'GEV':
+                p_scaler = 1  # GeV to GeV
+            elif params[0] == 'MEV':
+                p_scaler = 1 / 1000  # MeV to GeV
+            else:
+                print(params[0])
                 continue
 
-            # print(mass_ph)
-            info['id'] = ix
-            info['pdg'] = pdg
-            info['r'] = r / r_detec
-            info['z'] = z / z_detec
-            info['px'] = px
-            info['py'] = py
-            info['pt'] = pt
-            info['pz'] = pz
-            info['ET'] = Et
+            if params[1] == 'MM':
+                d_scaler = 1  # mm to mm
+            elif params[1] == 'CM':
+                d_scaler = 10  # cm to mm
+            else:
+                print(params[1])
+                continue
 
-            ix += 1
-            counter += 1
+            # Adjusting detector boundaries
+            r_detec = detec_radius * 1000  # m to mm
+            z_detec = detec_semilength * 1000
 
-            phi = my_arctan(py, px)
+            # Define our holder for pairs:
+            pt_dum = 0
+            ix = 0
+            for lepton in holder['l']:
+                info = dict()
+                info['Event'] = int(event)
 
-            theta = np.arctan2(pt, pz)
-            nu = -np.log(np.tan(theta / 2))
+                vertex = str(lepton[-1])
+                pdg = lepton[0]
+                px, py, pz = [p_scaler*ix for ix in lepton[1:4]]
+                x, y, z = [d_scaler*ix for ix in holder['v'][vertex][0:3]]
+                mass = lepton[-2] * p_scaler
+                r = np.sqrt(x ** 2 + y ** 2)
+                # Calculating transverse momentum
+                pt = np.sqrt(px ** 2 + py ** 2)
+                Et = np.sqrt(mass ** 2 + pt ** 2)
 
-            pts.append(pt)
-            pzs.append(pz)
-            nus.append(nu)
+                if r >= (r_detec) or abs(z) >= (z_detec):
+                     continue
+                elif pt < 10:
+                    continue
 
-            info['eta']=nu
-            info['phi']=phi
+                # print(mass_ph)
+                info['id'] = ix
+                info['pdg'] = pdg
+                info['r'] = r / r_detec
+                info['z'] = z / z_detec
+                info['px'] = px
+                info['py'] = py
+                info['pt'] = pt
+                info['pz'] = pz
+                info['ET'] = Et
 
-            dicts.append(info)
+                ix += 1
+                counter += 1
+
+                phi = my_arctan(py, px)
+
+                theta = np.arctan2(pt, pz)
+                nu = -np.log(np.tan(theta / 2))
+
+                pts.append(pt)
+                pzs.append(pz)
+                nus.append(nu)
+
+                info['eta']=nu
+                info['phi']=phi
+
+                dicts.append(info)
 
     print(f'Detected leptons in {detec_name}: {counter}')
 
@@ -147,7 +161,7 @@ def pipeline(detec_radius, detec_semilength, detec_name):
 
 
 types = ['VBF','GF']
-cards = [13,14,15]
+cards = [14, 15]
 tevs = [13]
 
 for type in types[:1]:
@@ -155,12 +169,7 @@ for type in types[:1]:
         for tev in tevs[:]:
             case = f"./cases/{tev}/{type}/{card}/"
 
-            file_in = f'./data/clean/recollection_leptons-{type}_{card}_{tev}.json'
-
             destiny_info = './data/clean/'
             destiny_ims0 = case
-
-            with open(file_in, 'r') as file:
-                data = json.load(file)
 
             pipeline(ATLASdet_radius,ATLASdet_semilength,'ATLAS')

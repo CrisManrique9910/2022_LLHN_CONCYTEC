@@ -20,47 +20,47 @@ draa_lim=" 0.4 = draa    ! min distance between gammas"
 draj_lim=" 0.4 = draj    ! min distance between gamma and jet" 
 dR_lim="  0.4 = R0gamma ! Radius of isolation code"
 
-##############################
-# Primero GF
-##############################
-folder_destiny='/home/cristian/Programs/MG5_aMC_v2_9_2/HN_GF/Cards'
-run_path="${folder_destiny}/run_card.dat"
+###############################
+## Primero GF
+###############################
+#folder_destiny='/home/cristian/Programs/MG5_aMC_v2_9_2/HN_GF/Cards'
+#run_path="${folder_destiny}/run_card.dat"
 
-#Cambia el small_width_treatment
-sed -i "17s/.*/${small}/" "${run_path}"
+##Cambia el small_width_treatment
+#sed -i "17s/.*/${small}/" "${run_path}"
 
-# Agrega los cortes al run_card
-sed -i "59s/.*/${ct}/" "${run_path}"
-sed -i "94s/.*/${decay}/" "${run_path}"
-sed -i "100s/.*/${pt_lim}/" "${run_path}"
-sed -i "112s/.*/${eta_lim}/" "${run_path}"
-sed -i "120s/.*/${draa_lim}/" "${run_path}"
+## Agrega los cortes al run_card
+#sed -i "59s/.*/${ct}/" "${run_path}"
+#sed -i "94s/.*/${decay}/" "${run_path}"
+#sed -i "100s/.*/${pt_lim}/" "${run_path}"
+#sed -i "112s/.*/${eta_lim}/" "${run_path}"
+#sed -i "120s/.*/${draa_lim}/" "${run_path}"
 
-for tev in $tevs
-	do
-	tev_="$((tev*1000/2))"
-	# Define las energias de los beams en el run_card
-	beam1="     ${tev_}.0     = ebeam1  ! beam 1 total energy in GeV"
-	beam2="     ${tev_}.0     = ebeam2  ! beam 2 total energy in GeV"
-	sed -i "35s/.*/${beam1}/" "${run_path}"
-	sed -i "36s/.*/${beam2}/" "${run_path}"
-	for i in {13..15}
-		do
-		# Copia el param_card correspondiente
-		filename_o="${folder_origin}/param_card_${i}_8.dat"
-		filename_d="${folder_destiny}/param_card.dat"
-		cp "${filename_o}" "${filename_d}" 
-		
-		# Le da el tag apropiado al run
-		tag="  GF_${i}_${tev}     = run_tag ! name of the run "
-		sed -i "21s/.*/${tag}/" "${run_path}"
-		
-		# Correr el run
-		cd "${folder_destiny}"
-		cd ..
-		./bin/madevent "${config_path}"
-	done
-done
+#for tev in $tevs
+#	do
+#	tev_="$((tev*1000/2))"
+#	# Define las energias de los beams en el run_card
+#	beam1="     ${tev_}.0     = ebeam1  ! beam 1 total energy in GeV"
+#	beam2="     ${tev_}.0     = ebeam2  ! beam 2 total energy in GeV"
+#	sed -i "35s/.*/${beam1}/" "${run_path}"
+#	sed -i "36s/.*/${beam2}/" "${run_path}"
+#	for i in {13..15}
+#		do
+#		# Copia el param_card correspondiente
+#		filename_o="${folder_origin}/param_card_${i}_8.dat"
+#		filename_d="${folder_destiny}/param_card.dat"
+#		cp "${filename_o}" "${filename_d}" 
+#		
+#		# Le da el tag apropiado al run
+#		tag="  GF_${i}_${tev}     = run_tag ! name of the run "
+#		sed -i "21s/.*/${tag}/" "${run_path}"
+#		
+#		# Correr el run
+#		cd "${folder_destiny}"
+#		cd ..
+#		./bin/madevent "${config_path}"
+#	done
+#done
 
 #################################
 # Ahora para VBF

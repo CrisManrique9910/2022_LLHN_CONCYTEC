@@ -25,7 +25,7 @@ for type in types[:1]:
 
             Path(destiny_im).mkdir(exist_ok=True, parents=True)
 
-            for input_file in glob.glob(origin + f"*.root"):
+            for input_file in sorted(glob.glob(origin + f"*.root")):
 
                 out_file = input_file.replace('.root','.pickle')
 
@@ -76,6 +76,8 @@ for type in types[:1]:
                 g = df_jets.groupby('N', as_index=False).cumcount()
                 df_jets['id'] = g
                 df_jets = df_jets.set_index(['N', 'id'])
+                #print(out_file.replace('.pickle','_jets.pickle'))
+                #sys.exit()
                 df_jets.to_pickle(out_file.replace('.pickle','_jets.pickle'))
 
                 if 'All' in input_file:

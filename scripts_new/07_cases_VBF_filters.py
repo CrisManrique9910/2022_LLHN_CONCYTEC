@@ -32,6 +32,8 @@ for tev in tevs[:]:
             df_jets = pd.read_pickle(jets_in)
             df_leps = pd.read_pickle(leptons_in)
             #print(df.z.max(), df.z.min(), df.r.max())
+            #print(df.index.get_level_values(0).nunique())
+            #sys.exit()
 
             ################ Jet Filters ####################
             ################ 1

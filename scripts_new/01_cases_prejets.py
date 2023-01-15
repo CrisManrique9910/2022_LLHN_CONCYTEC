@@ -16,7 +16,7 @@ tevs = [13]
 
 for tev in tevs[:]:
     for type in types[:]:
-        for card in cards[:]:
+        for card in cards[1:]:
 
             Path(destiny).mkdir(exist_ok=True, parents=True)
 

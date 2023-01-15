@@ -83,7 +83,7 @@ def z0_tof():
         #plt.ticklabel_format(axis='y', style='sci',scilimits=(0,0))
         ax.hist([data[data['MET_bin1']==label][col] for label in met_labels],color=metcolors,
                     bins=gbins,density=True,stacked=True,label=met_labels)
-        ax.text(txmin,txmax, f"{names[type]}\n$\mathregular{{M_{{h}}}}$ = {mass[card]} GeV\n{events} Events",
+        ax.text(txmin,txmax, f"{names[type]}\n$\mathregular{{M_{{h}}}}$ = {mass[card]} GeV\n",
                 transform=ax.transAxes,horizontalalignment=halig[col], linespacing=2, fontsize=18)
 
         if col == 'rel_tof' and maxi > 4:

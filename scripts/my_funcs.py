@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 cross_sec = {13:{'VBF': {50: 0.231009, 30: 0.233562, 10: 0.234305}},
              8: {'VBF': {50: 1.12885, 30: 1.14555, 10: 1.13663},'GF': {50: 7.4004, 30: 7.4165, 10: 7.409}}} # pb
-l = {8: 20.3,13: 300} #fb-1
+l = {8: 20.3,13: 139} #fb-1
 br_nn = 0.21
 br_np = {8: {50: 0.719,30: 0.935,10: 0.960}, 13:{50: 0.799, 30: 0.938, 10: 0.960}}
 
@@ -15,5 +16,51 @@ def my_arctan(y,x):
     arctan[arctan < 0] += 2*np.pi
     return arctan
 
-def get_scale(tev,type,mass):
-    return ((cross_sec[tev][type][mass]*1000)*l[tev]*br_nn*(br_np[tev][mass])**2)/10000
+def get_scale(tev,type,mass,nevents=10000):
+    return ((cross_sec[tev][type][mass]*1000)*l[tev]*br_nn*(br_np[tev][mass])**2)/nevents
+
+def format_exponent(ax, axis='y', size=13):
+    # Change the ticklabel format to scientific format
+    ax.ticklabel_format(axis=axis, style='sci', scilimits=(-2, 2))
+
+    # Get the appropriate axis
+    if axis == 'y':
+        ax_axis = ax.yaxis
+        x_pos = 0.0
+        y_pos = 1.0
+        horizontalalignment = 'left'
+        verticalalignment = 'bottom'
+    else:
+        ax_axis = ax.xaxis
+        x_pos = 1.0
+        y_pos = -0.05
+        horizontalalignment = 'right'
+        verticalalignment = 'top'
+
+    # Run plt.tight_layout() because otherwise the offset text doesn't update
+    plt.tight_layout()
+    ##### THIS IS A BUG
+    ##### Well, at least it's sub-optimal because you might not
+    ##### want to use tight_layout(). If anyone has a better way of
+    ##### ensuring the offset text is updated appropriately
+    ##### please comment!
+
+    # Get the offset value
+    offset = ax_axis.get_offset_text().get_text()
+
+    if len(offset) > 0:
+        # Get that exponent value and change it into latex format
+        minus_sign = u'\u2212'
+        expo = np.float(offset.replace(minus_sign, '-').split('e')[-1])
+        offset_text = r'x$\mathregular{10^{%d}}$' % expo
+    else:
+        offset_text = "   "
+    # Turn off the offset text that's calculated automatically
+    ax_axis.offsetText.set_visible(False)
+
+    # Add in a text box at the top of the y axis
+    ax.text(x_pos, y_pos, offset_text, fontsize=size, transform=ax.transAxes,
+            horizontalalignment=horizontalalignment,
+            verticalalignment=verticalalignment)
+
+    return ax

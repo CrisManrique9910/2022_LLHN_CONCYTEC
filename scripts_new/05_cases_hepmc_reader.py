@@ -1,6 +1,7 @@
 import json
 import numpy as np
 from pathlib import Path
+import gc
 
 # Particle Parameters
 neutralinos = [9900016, 9900014, 9900012]
@@ -17,7 +18,7 @@ active_z = (ATLAS_ECAL_z + active_ratio * (ATLAS_HCAL_z - ATLAS_ECAL_z)) * 1000
 # print(active_z, active_r)
 
 types = ['VBF','GF']
-cards = [13,14,15]
+cards = [15]
 tevs = [13]
 
 for type in types[:1]:
@@ -34,6 +35,12 @@ for type in types[:1]:
             it = 0
             i = 0
             limit = 2
+
+            it_start = 0
+            batch = 10000
+            corte_inf = it_start * batch
+            corte_sup = corte_inf + batch * 10
+            final_part_active = True
 
             # Action
             df = open(file_in, "r")
@@ -55,7 +62,18 @@ for type in types[:1]:
                 #sentence = df.readline()
                 #print(sentence)
                 line = sentence.split()
-                if line[0] == 'E':
+                if num <= corte_inf:
+                    holder = {'v':dict(),'a':[],'n5':dict()}
+                    tpx = 0
+                    tpy = 0
+                    if line[0] == 'E':
+                        if (num % 500) == 0:
+                            print(f'RUNNING: {type} {card} {tev} ' + f'Event {num}')
+                            print(len(data))
+                        num += 1
+                    nfile = it_start + 1
+                    continue
+                elif line[0] == 'E':
                     # num = int(line[1])
                     if num > 0: #Selection of relevant particles/vertices in the last event
                         #print(mpx,mpy)
@@ -90,7 +108,21 @@ for type in types[:1]:
                     #print(data)
                     holder = {'v':dict(),'a':[],'n5':dict()}
                     i += 1
-                    print(f'RUNNING: {type} {card} {tev} '+f'Event {num}')
+                    if (num % 500) == 0:
+                        print(f'RUNNING: {type} {card} {tev} ' + f'Event {num}')
+                        print(len(data))
+                    if num == nfile * batch:
+                        with open(destiny + file_out.replace('.json', f'-{nfile}.json'), 'w') as file:
+                            json.dump(data, file)
+                        print(f'Saved til {num - 1} in {file_out.replace(".json", f"-{nfile}.json")}')
+                        del data
+                        #del globals()['data']
+                        gc.collect()
+                        data = dict()
+                        nfile += 1
+                    if num == corte_sup:
+                        final_part_active = False
+                        break
                     num += 1
                     tpx = 0
                     tpy = 0
@@ -118,7 +150,7 @@ for type in types[:1]:
                         tpx += float(line[3]) * p_scaler
                         tpy += float(line[4]) * p_scaler
 
-                    if pdg == '22':
+                    if (pdg == '22') and (in_vertex == 0):
                         # id = int(line[1])
                         # px, py, pz, E, m = [float(x) for x in line[3:8]]
                         info = *[float(x) for x in line[3:8]], outg # px,py,pz,E,m,vertex from where it comes
@@ -129,40 +161,41 @@ for type in types[:1]:
                     codes.append(pdg)
             df.close()
 
-            # Event selection for the last event
-            selection = set()
-            data[num - 1] = {'params': params, 'v': dict(), 'a': [], 'n5': holder['n5'],
-                             'MET': None, 'MPx': None, 'MPy': None}
-            for n5_k, n5_v in holder['n5'].items():
-                # print(n5_k , n5_i)
-                selection.add(n5_k)
-                selection.add(n5_v[-1])
-            for photon in holder['a']:
-                # select only the photons that come from a n5 vertex
-                outg_a = photon[-1]
-                data[num - 1]['a'].append(photon)
-                if outg_a in selection:
-                    x, y, z = [d_scaler * ix for ix in holder['v'][outg_a][0:3]]
-                    # print(x,y,z)
-                    r = np.sqrt(x ** 2 + y ** 2)
-                    if (r > active_r) or (abs(z) > active_z):
-                        tpx -= photon[0]
-                        tpy -= photon[1]
-                        # print(tpx,tpy)
-                selection.add(outg_a)
-            for vertex in selection:
-                # select only the vertices that have a neutralino as incoming
-                data[num - 1]['v'][vertex] = holder['v'][vertex]
-            # getting the met
-            met = np.sqrt(tpx ** 2 + tpy ** 2)
-            data[num - 1]['MET'] = met
-            data[num - 1]['MPx'] = tpx
-            data[num - 1]['MPy'] = tpy
+            if final_part_active:
+                # Event selection for the last event
+                selection = set()
+                data[num - 1] = {'params': params, 'v': dict(), 'a': [], 'n5': holder['n5'],
+                                 'MET': None, 'MPx': None, 'MPy': None}
+                for n5_k, n5_v in holder['n5'].items():
+                    # print(n5_k , n5_i)
+                    selection.add(n5_k)
+                    selection.add(n5_v[-1])
+                for photon in holder['a']:
+                    # select only the photons that come from a n5 vertex
+                    outg_a = photon[-1]
+                    data[num - 1]['a'].append(photon)
+                    if outg_a in selection:
+                        x, y, z = [d_scaler * ix for ix in holder['v'][outg_a][0:3]]
+                        # print(x,y,z)
+                        r = np.sqrt(x ** 2 + y ** 2)
+                        if (r > active_r) or (abs(z) > active_z):
+                            tpx -= photon[0]
+                            tpy -= photon[1]
+                            # print(tpx,tpy)
+                    selection.add(outg_a)
+                for vertex in selection:
+                    # select only the vertices that have a neutralino as incoming
+                    data[num - 1]['v'][vertex] = holder['v'][vertex]
+                # getting the met
+                met = np.sqrt(tpx ** 2 + tpy ** 2)
+                data[num - 1]['MET'] = met
+                data[num - 1]['MPx'] = tpx
+                data[num - 1]['MPy'] = tpy
 
-            #print(data[num])
-            #print(data.keys())
+                #print(data[num])
+                #print(data.keys())
 
-            with open(destiny + file_out,'w') as file:
-                json.dump(data,file)
+                with open(destiny + file_out.replace('.json', f'-{nfile}.json'), 'w') as file:
+                    json.dump(data, file)
 
-            print(f'RUNNING: {type} {card} {tev} '+f'info saved in {file_out}')
+                print(f'RUNNING: {type} {card} {tev} '+f'info saved in {file_out}')

@@ -21,7 +21,7 @@ for type in types[:1]:
             Path(destiny).mkdir(exist_ok=True, parents=True)
             os.system(f'rm {destiny}*.root')
 
-            for in_file in glob.glob(origin + f"*.hepmc"):
+            for in_file in sorted(glob.glob(origin + f"*.hepmc"))[:2]:
                 out_file = in_file.replace('.hepmc','.root')
                 #print(out_file)
                 os.system('cd /home/cristian/Programs/MG5_aMC_v2_9_2/Delphes && ./DelphesHepMC '
